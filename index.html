@@ -713,6 +713,9 @@ body>.gmod{max-width:none!important;width:auto!important;grid-column:auto!import
 .gquick{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .gquick button{padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(167,139,250,.1);color:var(--ink);font:600 12.5px Manrope,sans-serif;cursor:pointer}
 .gquick button:hover{background:rgba(167,139,250,.24)}
+.gfin{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(11,7,22,.45);cursor:pointer;font-size:14px}
+.gfin input{width:auto;margin-top:3px;accent-color:#E879F9}
+.gfin small{display:block;color:var(--mute);font-size:12px}
 .gsend{width:100%;margin-top:16px;padding:13px;border:0;border-radius:14px;background:linear-gradient(135deg,#F59E0B,#FCD34D);color:#1c1205;font:700 15px Unbounded,sans-serif;cursor:pointer;box-shadow:0 10px 28px rgba(251,191,36,.3)}
 .gsend:disabled{opacity:.45;cursor:default;box-shadow:none}
 .gmsg{margin:10px 0 0;font-size:13px;text-align:center;color:var(--mute)}.gmsg:empty{display:none}.gmsg.ok{color:#6EE7B7}.gmsg.bad{color:#FDA4AF}
@@ -751,7 +754,7 @@ GIFT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2
 CR='<svg viewBox="0 0 24 24" fill="#1c1205"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>';
 el.innerHTML=`<button class="abtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Аккаунт ${e(M.name)}"><span class="av">${ini}</span>${M.admin?`<span class="crown">${CR}</span>`:''}</button>
 <div class="amenu" role="menu" hidden><div class="ahead"><span class="av">${ini}</span><div><b>${e(M.name)}</b><small class="${M.admin?'adm':''}">${M.admin?'администратор':'игрок'}</small></div></div><div class="asep"></div>
-${M.admin?`<button class="aitem" type="button" data-a="gift">${GIFT}Выдать соус / дрип</button>`:''}<button class="aitem" type="button" data-a="pw">${KEY}Сменить пароль</button><div class="apw" hidden></div>
+${M.admin?`<button class="aitem" type="button" data-a="gift">${GIFT}Выдать / достроить</button>`:''}<button class="aitem" type="button" data-a="pw">${KEY}Сменить пароль</button><div class="apw" hidden></div>
 <button class="aitem out" type="button" data-a="out">${OUT}Выйти</button></div>`;
 const btn=el.querySelector('.abtn'),menu=el.querySelector('.amenu'),pw=el.querySelector('.apw');
 const open=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',v);if(!v){pw.hidden=true;pw.innerHTML=''}};
@@ -1896,16 +1899,17 @@ setTimeout(()=>{if(!READY){READY=true;if(tabNow()==="add")drawAdd()}},6000);
 function giftModal(){const e=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let ov=document.getElementById('gmod');if(ov)ov.remove();ov=document.createElement('div');ov.id='gmod';ov.className='gmod';
 ov.innerHTML=`<div class="gbox" role="dialog" aria-modal="true" aria-labelledby="gmt"><button class="gx" type="button" aria-label="Закрыть">×</button>
-<p class="gk">Админка</p><h2 id="gmt">Выдать соус и дрип</h2>
+<p class="gk">Админка</p><h2 id="gmt">Выдать соус, дрип, стройки</h2>
 <label class="gl">Игрок</label><div class="gusers"><p class="gload">Загружаю игроков…</p></div>
 <div class="gnums"><label><span>Соус</span><input type="number" min="0" step="1" inputmode="numeric" id="gsa" placeholder="0"></label><label><span>Дрип</span><input type="number" min="0" step="1" inputmode="numeric" id="gdr" placeholder="0"></label></div>
 <div class="gquick"><button type="button" data-q="sa:50">+50 соуса</button><button type="button" data-q="sa:200">+200 соуса</button><button type="button" data-q="sa:1000">+1000 соуса</button><button type="button" data-q="dr:1">+1 дрип</button><button type="button" data-q="dr:5">+5 дрипа</button></div>
+<label class="gfin"><input type="checkbox" id="gfin"><span>Достроить все стройки<small>здания, которые сейчас строятся, сразу станут готовы</small></span></label>
 <label class="gl" for="gnote">Подпись (необязательно)</label><input id="gnote" maxlength="120" placeholder="например: за помощь с базой">
 <button class="gsend" type="button" disabled>Выдать</button><p class="gmsg" role="status"></p></div>`;
 document.body.appendChild(ov);let sel=null;const close=()=>ov.remove();ov.querySelector('.gx').onclick=close;ov.onclick=ev=>{if(ev.target===ov)close()};
 document.addEventListener('keydown',function k(ev){if(ev.key==='Escape'){close();document.removeEventListener('keydown',k)}});
 const sa=ov.querySelector('#gsa'),dr=ov.querySelector('#gdr'),send=ov.querySelector('.gsend'),msg=ov.querySelector('.gmsg');
-const upd=()=>{send.disabled=!sel||!((+sa.value||0)>0||(+dr.value||0)>0)};sa.oninput=dr.oninput=upd;
+const fin=ov.querySelector('#gfin');const upd=()=>{send.disabled=!sel||!((+sa.value||0)>0||(+dr.value||0)>0||fin.checked)};sa.oninput=dr.oninput=fin.onchange=upd;
 ov.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.q.split(':'),i=k==='sa'?sa:dr;i.value=(+i.value||0)+(+v);upd()});
 const load=async()=>{const r=await DLF('/api/admin/users');const j=await r.json().catch(()=>({}));const box=ov.querySelector('.gusers');
 if(!r.ok){box.innerHTML='<p class="gload">Не получилось загрузить игроков</p>';return}
@@ -1913,8 +1917,8 @@ box.innerHTML=j.users.map(u=>{let h=0;for(const c of u.login)h=(h*31+c.charCodeA
 return`<button type="button" class="gu${sel===u.id?' on':''}" data-id="${u.id}" style="--ah:${h}"><span class="av">${e([...u.login][0]||'?')}</span><span class="gun"><b>${e(u.login)}${u.admin?' <i>админ</i>':''}</b><small>${u.sa==null?'ещё не играл':`соус ${u.sa} · дрип ${u.dr}`}</small>${p}</span></button>`}).join('')||'<p class="gload">Игроков нет</p>';
 box.querySelectorAll('.gu').forEach(b=>b.onclick=()=>{sel=b.dataset.id;box.querySelectorAll('.gu').forEach(x=>x.classList.toggle('on',x===b));upd()})};
 send.onclick=async()=>{send.disabled=true;msg.className='gmsg';msg.textContent='Отправляю…';
-const r=await DLF('/api/admin/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:sel,sa:+sa.value||0,dr:+dr.value||0,note:ov.querySelector('#gnote').value})});const j=await r.json().catch(()=>({}));
-if(r.ok){msg.className='gmsg ok';msg.textContent='Готово. Игрок получит подарок в течение 20 секунд, если сейчас на сайте, или при следующем заходе.';sa.value='';dr.value='';load();if(sel===(window.DL_ME||{}).id)setTimeout(()=>window.checkGifts&&checkGifts(),300)}
+const r=await DLF('/api/admin/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:sel,sa:+sa.value||0,dr:+dr.value||0,fin:fin.checked?BLD.map(b=>b.id):[],note:ov.querySelector('#gnote').value})});const j=await r.json().catch(()=>({}));
+if(r.ok){msg.className='gmsg ok';msg.textContent='Готово. Игрок получит подарок в течение 20 секунд, если сейчас на сайте, или при следующем заходе.';sa.value='';dr.value='';fin.checked=false;load();if(sel===(window.DL_ME||{}).id)setTimeout(()=>window.checkGifts&&checkGifts(),300)}
 else{msg.className='gmsg bad';msg.textContent=j.error||'Ошибка'}upd()};load()}
 (function(){if(!window.DL_ME)return;let busy=false;
 window.checkGifts=async function(){if(busy||typeof READY==='undefined'||!READY||!GM)return;busy=true;try{

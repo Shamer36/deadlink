@@ -201,10 +201,12 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
   if (path === "/api/admin/gift" && method === "POST") {
     const m = await need(req, true), q = await body(req)
     const sa = Math.trunc(+q.sa || 0), dr = Math.trunc(+q.dr || 0)
-    if (sa < 0 || dr < 0 || sa > 1e6 || dr > 1e5 || (!sa && !dr)) throw new HttpError(400, "Укажи, сколько выдать")
+    const fin = Array.isArray(q.fin) ? q.fin.map(String).filter((x: string) => /^[a-z]{2,12}$/.test(x)).slice(0, 20) : []
+    if (sa < 0 || dr < 0 || sa > 1e6 || dr > 1e5 || (!sa && !dr && !fin.length)) throw new HttpError(400, "Укажи, что выдать")
     const uid = String(q.uid || "")
     if (!(await getUserById(uid))) throw new HttpError(404, "Нет такого игрока")
-    const g = { id: randomBytes(5).toString("hex"), sa, dr, from: m.name, note: String(q.note || "").slice(0, 120), at: Math.floor(Date.now() / 1000) }
+    const g: Record<string, unknown> = { id: randomBytes(5).toString("hex"), sa, dr, from: m.name, note: String(q.note || "").slice(0, 120), at: Math.floor(Date.now() / 1000) }
+    if (fin.length) g.fin = fin
     await db().setJSON("gifts/" + uid + "/" + g.id, g)
     return json(req, { ok: true, gift: g })
   }
