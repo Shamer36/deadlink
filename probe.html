@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deadlink — проверка связи</title>
+<style>
+:root{color-scheme:dark}body{margin:0;min-height:100vh;background:#0B0716;color:#F4EEFF;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;padding:20px}
+.c{max-width:460px;width:100%;background:#1a1036;border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:22px}
+h1{font-size:20px;margin:0 0 6px}p{color:#A99BC9;margin:0 0 16px;font-size:14px}
+.r{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid rgba(167,139,250,.15)}
+.ok{color:#6EE7B7}.bad{color:#FDA4AF}.wait{color:#FCD34D}b{font-weight:600}
+button{margin-top:14px;width:100%;padding:12px;border:0;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#E879F9);color:#fff;font:600 15px system-ui;cursor:pointer}
+</style></head><body><div class="c">
+<h1>Проверка связи</h1><p>Если ты видишь эту страницу, GitHub Pages у тебя открывается. Ниже проверка остальных сервисов. Сделай скрин и скинь.</p>
+<div id="L"></div><button onclick="run()">Проверить ещё раз</button><p id="ua" style="margin-top:12px;font-size:12px"></p></div>
+<script>
+const T=[["GitHub Pages (эта страница)",null],["Supabase (облачная база)","https://abcdefghijklmnopqrst.supabase.co/rest/v1/"],["Supabase (сайт)","https://supabase.com/favicon.ico"],["Firebase (запасной вариант)","https://firestore.googleapis.com/"],["Deezer API","https://api.deezer.com/"]];
+async function probe(u){if(!u)return[true,0];const t=performance.now(),c=new AbortController(),k=setTimeout(()=>c.abort(),8000);
+try{await fetch(u+(u.includes('?')?'&':'?')+'_='+Date.now(),{mode:'no-cors',cache:'no-store',signal:c.signal});return[true,Math.round(performance.now()-t)]}catch(e){return[false,e.name==='AbortError'?'таймаут':'нет связи']}finally{clearTimeout(k)}}
+async function run(){const L=document.getElementById('L');L.innerHTML=T.map((x,i)=>`<div class="r"><span>${x[0]}</span><b id="s${i}" class="wait">…</b></div>`).join('');
+document.getElementById('ua').textContent=new Date().toLocaleString('ru')+' · '+(navigator.connection&&navigator.connection.type||'')+' '+navigator.userAgent.slice(0,80);
+await Promise.all(T.map(async(x,i)=>{const [ok,v]=await probe(x[1]),e=document.getElementById('s'+i);e.className=ok?'ok':'bad';e.textContent=ok?('работает'+(v?' · '+v+' мс':'')):('не работает: '+v)}))}
+run();
+</script></body></html>
