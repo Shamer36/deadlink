@@ -29,13 +29,12 @@
     if (a.dd !== today) { a.dd = today; a.dg = 0 }
     return a;
   }
-  const learn = (a, l) => { if (!a.k.includes(l)) { a.k = [...a.k + l].sort().join(""); return true } return false };
   const gi = (l, cls) => `<i class="azi${cls ? " " + cls : ""}" style="--m:url('${G(l)}')"></i>`;
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   function shell(inner) {
-    const a = S(), n = a.k.length;
-    return `<div class="azwin"><div class="azbar"><span>${gi("A")}${gi("Z")}${gi("E")}${gi("R")}${gi("O")}${gi("Y")}</span><b>AZEROY.exe</b><em>${n}/26 букв</em><button class="azx" aria-label="Закрыть">×</button></div>
+    const a = S(), n = LETTERS.filter((L) => a.done[L.id]).length;
+    return `<div class="azwin"><div class="azbar"><span>${gi("A")}${gi("Z")}${gi("E")}${gi("R")}${gi("O")}${gi("Y")}</span><b>AZEROY.exe</b><em>писем ${n}/${LETTERS.length}</em><button class="azx" aria-label="Закрыть">×</button></div>
 <div class="aztabs">${[["letters", "Письма Гехеды"], ["clean", "Чистка"], ["dict", "Словарь"]].map(([k, t]) => `<button data-v="${k}" class="${VIEW === k ? "on" : ""}">${t}</button>`).join("")}</div>
 <div class="azbody">${inner}</div></div><p class="hint" style="margin-top:10px">По мотивам мира Azeroy и алфавита Azeroyska из работ Yabujin, в пересказе фанатов.</p>`;
   }
@@ -43,7 +42,7 @@
   // ---------- Письма ----------
   function lettersList() {
     const a = S();
-    return `<p class="azlead">Гехеда пишет письма на Azeroyska. Подставляй буквы под глифы, чтобы прочитать их. Буквы из прочитанных писем остаются в словаре навсегда.</p><div class="azlist">` +
+    return `<p class="azlead">Гехеда пишет письма на Azeroyska. Подставляй буквы под глифы, чтобы прочитать их. Все буквы есть в словаре, но в каждом письме их надо вспоминать заново.</p><div class="azlist">` +
       LETTERS.map((L, i) => {
         const open = i === 0 || a.done[LETTERS[i - 1].id], done = a.done[L.id];
         return `<button class="azcard${done ? " done" : ""}" data-l="${L.id}" ${open ? "" : "disabled"}><span class="azno">${String(i + 1).padStart(2, "0")}</span><span class="azct"><b>${open ? esc(L.t) : "???"}</b><small>${done ? "прочитано" : open ? "письмо запечатано" : "откроется после предыдущего"}</small></span><span class="azmini">${[...L.c.replace(/ /g, "")].slice(0, 6).map((l) => gi(l)).join("")}</span></button>`;
@@ -54,7 +53,7 @@
     if (!a.cur || a.cur.id !== L.id) a.cur = { id: L.id, f: "", m: 0 };
     return a.cur;
   }
-  const known = (a, c, l) => a.k.includes(l) || c.f.includes(l);
+  const known = (a, c, l) => c.f.includes(l);
   function letterView(L) {
     const a = S(), c = cur(L), done = a.done[L.id];
     const need = [...new Set(L.c.replace(/ /g, ""))];
@@ -84,7 +83,7 @@
     const need = [...new Set(L.c.replace(/ /g, ""))];
     if (need.every((x) => known(a, c, x))) {
       const first = !a.done[L.id];
-      a.done[L.id] = 1; need.forEach((x) => learn(a, x)); a.cur = null;
+      a.done[L.id] = 1; a.cur = null;
       if (first) { GM.dr += 2; toast("Письмо прочитано. +2 дрипа") }
     }
     commit(); draw();
@@ -94,7 +93,7 @@
   function cleanView() {
     const a = S();
     const left = Math.max(0, DAYDRIP - a.dg);
-    if (!RUN) return `<p class="azlead">Систему Tai-85 чистят. Сверху падают глифы и слова: успей назвать их, пока они не долетели до низа. Каждая ошибка добавляет очистки. Буква, которую назвал правильно три раза, попадает в словарь.</p>
+    if (!RUN) return `<p class="azlead">Систему Tai-85 чистят. Сверху падают глифы и слова: успей назвать их, пока они не долетели до низа. Каждая ошибка добавляет очистки. Подсмотреть буквы можно в словаре, но не во время сеанса.</p>
 <div class="azstart"><div><b>${a.best}</b><span>рекорд</span></div><div><b>${left}</b><span>дрипа ещё можно получить сегодня</span></div></div>
 <button class="azgo">Начать сеанс</button>`;
     return `<div class="azhud"><span>счёт <b id="azsc">${RUN.score}</b></span><div class="azclean"><i id="azcl" style="width:${RUN.clean}%"></i></div><span>очистка</span></div>
@@ -103,8 +102,7 @@
   function pickItem() {
     const a = S(), n = RUN.n++;
     if (n > 0 && n % 8 === 7) { const w = WORDS[Math.floor(Math.random() * WORDS.length)]; return { w } }
-    const kn = [...a.k], unk = [...AB].filter((l) => !a.k.includes(l));
-    const l = (kn.length >= 4 && Math.random() < 0.7) || !unk.length ? kn[Math.floor(Math.random() * kn.length)] : unk[Math.floor(Math.random() * unk.length)];
+    const l = AB[Math.floor(Math.random() * 26)];
     return { l: l || "A" };
   }
   function opts(item) {
@@ -115,8 +113,7 @@
     const a = S(), it = pickItem(), f = $("#azf"), o = $("#azo"); if (!f || !o) return stopRun();
     RUN.item = it; RUN.t0 = performance.now();
     RUN.dur = Math.max(2200, (it.w ? 9000 : 6000) - RUN.score * 120);
-    const hint = it.l && !a.k.includes(it.l) && (a.cnt[it.l] || 0) < 2;
-    f.innerHTML = it.w ? `<span class="azfw">${[...it.w].map((l) => gi(l)).join("")}</span>` : `${gi(it.l, "big")}${hint ? `<small>${it.l}</small>` : ""}`;
+    f.innerHTML = it.w ? `<span class="azfw">${[...it.w].map((l) => gi(l)).join("")}</span>` : `${gi(it.l, "big")}`;
     f.style.left = it.w ? "50%" : 15 + Math.random() * 70 + "%"; f.style.top = "0%";
     o.innerHTML = opts(it).map((x) => `<button data-o="${x}">${x}</button>`).join("");
     o.querySelectorAll("button").forEach((b) => (b.onclick = () => answer(b.dataset.o)));
@@ -127,7 +124,6 @@
     RUN.item = null;
     if (ok) {
       RUN.score++; RUN.clean = Math.max(0, RUN.clean - 5);
-      if (it.l) { a.cnt[it.l] = (a.cnt[it.l] || 0) + 1; if (a.cnt[it.l] >= 3 && learn(a, it.l)) toast("Выучена буква " + it.l) }
       flash("ok");
     } else { RUN.clean += 25; flash("bad") }
     const sc = $("#azsc"), cl = $("#azcl"); if (sc) sc.textContent = RUN.score; if (cl) cl.style.width = Math.min(100, RUN.clean) + "%";
@@ -159,9 +155,8 @@
   // ---------- Словарь ----------
   function dictView() {
     const a = S();
-    return `<p class="azlead">Буквы попадают сюда из прочитанных писем и из «Чистки» (три правильных ответа подряд по сеансам).</p><div class="azdict">${[...AB].map((l) => {
-      const k = a.k.includes(l);
-      return `<div class="azd${k ? " k" : ""}">${gi(l)}<b>${k ? l : "?"}</b>${!k && a.cnt[l] ? `<small>${a.cnt[l]}/3</small>` : ""}</div>`;
+    return `<p class="azlead">Алфавит Azeroyska. Запоминай: в письмах и в «Чистке» буквы сами не подставляются.</p><div class="azdict">${[...AB].map((l) => {
+      return `<div class="azd k">${gi(l)}<b>${l}</b></div>`;
     }).join("")}</div>`;
   }
 
@@ -177,7 +172,7 @@
   }
   function bind() {
     const box = $("#azbox");
-    box.querySelectorAll(".aztabs button").forEach((b) => (b.onclick = () => { VIEW = b.dataset.v; OPEN = null; SEL = null; if (VIEW !== "clean") stopRun(); draw() }));
+    box.querySelectorAll(".aztabs button").forEach((b) => (b.onclick = () => { VIEW = b.dataset.v; SEL = null; if (VIEW !== "clean") stopRun(); draw() }));
     box.querySelectorAll(".azcard").forEach((b) => (b.onclick = () => { OPEN = b.dataset.l; SEL = null; draw() }));
     const bk = box.querySelector(".azback"); if (bk) bk.onclick = () => { OPEN = null; draw() };
     box.querySelectorAll(".azg").forEach((b) => (b.onclick = () => { SEL = b.dataset.g; draw() }));
