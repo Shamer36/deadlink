@@ -1987,6 +1987,6 @@ const from=[...new Set(got.map(g=>g.from))].join(', '),note=got.map(g=>g.note).f
 const bn=[...new Set(built)].map(id=>(bdef(id)||{n:id}).n).join(', ');toast(`Подарок от ${from}: ${[s?'+'+s+' соуса':'',d?'+'+d+' дрипа':'',bn?'готово: '+bn:''].filter(Boolean).join(', ')}${note?' — '+note:''}`)}catch(e){}finally{busy=false}};
 setTimeout(checkGifts,2500);setInterval(checkGifts,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGifts()})})();
 </script>
-<script src="azeroy/az.js"></script>
+<script src="azeroy/az.js?v=2"></script>
 </body>
 </html>

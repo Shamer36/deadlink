@@ -15,12 +15,13 @@
     { id: "yate", t: "Письмо матери", c: "MOTHER I MADE LIFE I AM NOT ALONE", r: "Гехеда пишет матери: он создал жизнь, её зовут Yate, и он больше не одинок. Он превзошёл ту, что называла его творения уродливыми. Число 1616 горит рядом с колыбелью." },
   ];
   const WORDS = ["AZEROY", "YATE", "GEHEDA", "VELYYR", "TAI", "KEY", "LAKE", "BIRDS", "SOUL", "LIFE", "MOTHER", "CLEAN", "GATE", "SWORD", "CLAW", "ANGEL"];
-  const MAXMISS = 6, DAYDRIP = 3;
+  const MAXMISS = 6, DAYDRIP = 3, AZV = 2;
 
   let VIEW = "letters", OPEN = null, SEL = null, RUN = null;
 
   function S() {
-    const a = (GM.az = GM.az && typeof GM.az === "object" ? GM.az : {});
+    let a = (GM.az = GM.az && typeof GM.az === "object" ? GM.az : {});
+    if (a.v !== AZV) { a = GM.az = { v: AZV }; commit() }
     a.k = typeof a.k === "string" ? a.k : "";
     a.done = a.done && typeof a.done === "object" ? a.done : {};
     a.cnt = a.cnt && typeof a.cnt === "object" ? a.cnt : {};
