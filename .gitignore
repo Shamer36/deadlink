@@ -1,13 +1,7 @@
-# данные сайта живут только на компьютере, в GitHub их нет
-data/
-_blob/
-media/
-log.txt
+node_modules/
+.netlify/
+backend/node_modules/
 *.tmp
-# программы туннелей
-tuna.exe
-cloudflared.exe
-# системное
 Thumbs.db
 desktop.ini
 .DS_Store

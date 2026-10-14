@@ -56,7 +56,9 @@ input:focus{border-color:#C084FC;box-shadow:0 0 0 3px rgba(192,132,252,.2)}
 </form>
 </div>
 </main>
+<script src="config.js"></script>
 <script>
+try{if(localStorage.getItem('dl_token')&&localStorage.getItem('dl_me'))location.replace('./')}catch(e){}
 let up=false;const $=id=>document.getElementById(id);
 function mode(u){up=u;$('tIn').setAttribute('aria-selected',!u);$('tUp').setAttribute('aria-selected',u);$('rep').hidden=!u;$('lnote').hidden=!u;
 $('go').textContent=u?'Создать аккаунт':'Войти';$('pw').autocomplete=u?'new-password':'current-password';$('err').textContent=''}
@@ -67,9 +69,9 @@ if(up){if(!/^[A-Za-z0-9_.\-]{3,20}$/.test(login)){er.textContent='Логин: о
 if(password.length<6){er.textContent='Пароль должен быть не короче 6 символов';return}
 if(password!==$('pw2').value){er.textContent='Пароли не совпадают';return}}
 $('go').disabled=true;
-try{const r=await fetch(up?'/api/register':'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login,password})});
-const j=await r.json().catch(()=>({}));if(r.ok){location.href='/';return}er.textContent=j.error||'Что-то пошло не так'}
-catch(x){er.textContent='Сервер не отвечает. Запущен ли ЗАПУСК.bat?'}
+try{const r=await fetch(DL_API+(up?'/api/register':'/api/login'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login,password})});
+const j=await r.json().catch(()=>({}));if(r.ok&&j.token){try{localStorage.setItem('dl_token',j.token);localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(e){er.textContent='Браузер не даёт сохранить вход (приватный режим?)';$('go').disabled=false;return}location.replace('./');return}er.textContent=j.error||'Что-то пошло не так'}
+catch(x){er.textContent='Сервер не отвечает. Проверь интернет и попробуй ещё раз.'}
 $('go').disabled=false};
 </script>
 </body>

@@ -1,0 +1,4 @@
+# Netlify: только API базы Deadlink. Сам сайт живёт на GitHub Pages.
+[build]
+  publish = "public"
+  functions = "netlify/functions"

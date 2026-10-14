@@ -758,13 +758,13 @@ const open=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',v);if(!v){pw.hidd
 btn.onclick=ev=>{ev.stopPropagation();open(menu.hidden)};
 document.addEventListener('click',ev=>{if(!el.contains(ev.target))open(false)});document.addEventListener('keydown',ev=>{if(ev.key==='Escape')open(false)});
 const gb=el.querySelector('[data-a=gift]');if(gb)gb.onclick=()=>{open(false);giftModal()};
-el.querySelector('[data-a=out]').onclick=async()=>{await fetch('/api/logout',{method:'POST'});location.href='/'};
+el.querySelector('[data-a=out]').onclick=async()=>{await DLF('/api/logout',{method:'POST'}).catch(()=>{});DL_LOGOUT()};
 el.querySelector('[data-a=pw]').onclick=()=>{if(!pw.hidden){pw.hidden=true;pw.innerHTML='';return}pw.hidden=false;
 pw.innerHTML=`<input type="password" name="o" placeholder="Старый пароль" autocomplete="current-password"><input type="password" name="n" placeholder="Новый, от 6 символов" autocomplete="new-password"><button class="go" type="button">Сохранить</button><p class="am"></p>`;
 pw.querySelector('input').focus();const m=pw.querySelector('.am');
 pw.querySelector('.go').onclick=async()=>{const o=pw.querySelector('[name=o]').value,n=pw.querySelector('[name=n]').value;m.className='am';
 if(n.length<6){m.className='am bad';m.textContent='Новый пароль от 6 символов';return}m.textContent='Сохраняю…';
-const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old:o,new:n})});const j=await r.json().catch(()=>({}));
+const r=await DLF('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old:o,new:n})});const j=await r.json().catch(()=>({}));
 if(r.ok){m.className='am ok';m.textContent='Пароль изменён';setTimeout(()=>{pw.hidden=true;pw.innerHTML=''},1400)}else{m.className='am bad';m.textContent=j.error||'Ошибка'}}}});</script>
 <script>(function(){const b=document.body,a=document.createElement('aside');a.className='side';const br=b.querySelector('header.brand'),w=document.getElementById('wallet'),n=b.querySelector('nav');b.insertBefore(a,br);[br,w,n].forEach(x=>x&&a.appendChild(x))})();</script>
 <div class="subnav" id="subnav" role="tablist" aria-label="Подразделы"></div>
@@ -791,14 +791,22 @@ if(r.ok){m.className='am ok';m.textContent='Пароль изменён';setTime
 <section id="add" class="panel" hidden><div id="addbox"></div><div id="mine"></div></section>
 <section id="shelf" class="panel" hidden><div id="shelfbox"></div></section>
 
-<script>/*DL_ME*/</script>
+<script src="config.js"></script>
+<script>(function(){var t=null,m=null;try{t=localStorage.getItem('dl_token');m=JSON.parse(localStorage.getItem('dl_me')||'null')}catch(e){}
+var out=function(){try{localStorage.removeItem('dl_token');localStorage.removeItem('dl_me')}catch(e){}location.replace('login.html')};
+if(!t||!m||!m.id){out();return}
+window.DL_ME=m;window.DL_LOGOUT=out;
+window.DLF=function(p,o){o=o||{};o.headers=Object.assign({},o.headers||{},{Authorization:'Bearer '+t});return fetch(DL_API+p,o).then(function(r){if(r.status===401){out();throw new Error('login')}return r})};
+DLF('/api/me',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(!j.user){out();return}if(j.user.admin!==m.admin||j.user.name!==m.name||j.user.id!==m.id){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(e){}location.reload()}}).catch(function(){});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(function(){if(!navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(){var k='dl_swr';try{if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');location.reload()}}catch(e){}})}}).catch(function(){})}
+})();</script>
 <script>
 /* Deadlink local: замена облачного хранилища на локальный сервер (server.py) */
 (function(){
 let D=null,P=null;const subs={};
-const load=()=>P||(P=fetch('/api/db',{cache:'no-store'}).then(r=>{if(r.status===401){location.reload();throw new Error('login')}return r.json()}).then(j=>D=j));
+const load=()=>P||(P=DLF('/api/db',{cache:'no-store'}).then(r=>{if(r.status===401){location.reload();throw new Error('login')}return r.json()}).then(j=>D=j));
 const cp=o=>o==null?o:JSON.parse(JSON.stringify(o));
-const post=o=>fetch('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)}).then(r=>{if(r.status===401)location.reload();if(!r.ok)throw new Error('save failed')});
+const post=o=>DLF('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)}).then(r=>{if(r.status===401)location.reload();if(!r.ok)throw new Error('save failed')});
 const snap=c=>({docs:Object.entries(D[c]||{}).map(([id,d])=>({id,exists:true,data:()=>cp(d)}))});
 const notify=c=>(subs[c]||[]).forEach(f=>{try{f(snap(c))}catch(e){console.error(e)}});
 const ref=(c,id)=>({id,
@@ -809,8 +817,8 @@ const ref=(c,id)=>({id,
 const db={collection:c=>({doc:id=>ref(c,id),get:async()=>{await load();return snap(c)},
  onSnapshot:(cb,err)=>{(subs[c]=subs[c]||[]).push(cb);load().then(()=>cb(snap(c))).catch(e=>err&&err(e));return()=>{subs[c]=(subs[c]||[]).filter(f=>f!==cb)}}}),
  doc:p=>{const i=p.lastIndexOf('/');return ref(p.slice(0,i),p.slice(i+1))}};
-const assets={upload:async(f,o)=>{const r=await fetch('/api/upload?type='+encodeURIComponent((o&&o.type)||f.type||''),{method:'POST',body:f});if(!r.ok)throw new Error('upload failed');return r.json()},
- delete:async id=>{await fetch('/api/asset/'+id,{method:'DELETE'})}};
+const assets={upload:async(f,o)=>{const r=await DLF('/api/upload?type='+encodeURIComponent((o&&o.type)||f.type||''),{method:'POST',body:f});if(!r.ok)throw new Error('upload failed');return r.json()},
+ delete:async id=>{await DLF('/api/asset/'+id,{method:'DELETE'})}};
 const ME=window.DL_ME||{id:'local',name:'local',admin:true};window.LSK=k=>k+':'+ME.id;if(!ME.admin)document.documentElement.classList.add('noadm');
 const user={id:async()=>ME.id,can:async()=>!!ME.admin,name:async()=>ME.name};
 window.claude={use:async n=>{if(n==='db')return db;if(n==='assets')return assets;if(n==='user')return user;throw new Error('capability '+n+' недоступна локально')}};
@@ -1238,7 +1246,7 @@ const AUD=p=>AS?`<label class="fld"><span>Аудио (m4a, mp4 или webm, до
 async function uploadAudio(id){const el=$("#"+id);const f=el&&el.files&&el.files[0];if(!f)return "";if(!AS)throw new Error("Загрузка аудио недоступна: нужны права записи.");const n=f.name.toLowerCase();
 if(n.endsWith(".mp3")||f.type==="audio/mpeg")throw new Error("mp3 хранилище не принимает. Конвертируй файл в m4a (AAC).");
 const type=(n.endsWith(".webm")||/webm/.test(f.type))?"video/webm":(n.endsWith(".mp4")||n.endsWith(".m4a")||/mp4|m4a|aac/.test(f.type))?"video/mp4":"";if(!type)throw new Error("Подходят только m4a, mp4 или webm.");
-if(f.size>20*1048576)throw new Error("Файл больше 20 МБ.");const r=await AS.upload(f,{type});return r.id}
+if(f.size>4*1048576)throw new Error("Файл больше 4 МБ. Обрежь трек до отрывка.");const r=await AS.upload(f,{type});return r.id}
 async function pic(id){const f=$("#"+id).files[0];return f?await readImg(f):""}
 async function saveArtist(){const n=$("#f_n").value.trim();if(!n)return msg("Впиши имя.");if(A.some(a=>a.a===esc(n)))return msg("Такой исполнитель уже есть. Новый релиз можно добавить ниже.");
 let k=$("#f_k").value;
@@ -1899,19 +1907,19 @@ document.addEventListener('keydown',function k(ev){if(ev.key==='Escape'){close()
 const sa=ov.querySelector('#gsa'),dr=ov.querySelector('#gdr'),send=ov.querySelector('.gsend'),msg=ov.querySelector('.gmsg');
 const upd=()=>{send.disabled=!sel||!((+sa.value||0)>0||(+dr.value||0)>0)};sa.oninput=dr.oninput=upd;
 ov.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const [k,v]=b.dataset.q.split(':'),i=k==='sa'?sa:dr;i.value=(+i.value||0)+(+v);upd()});
-const load=async()=>{const r=await fetch('/api/admin/users');const j=await r.json().catch(()=>({}));const box=ov.querySelector('.gusers');
+const load=async()=>{const r=await DLF('/api/admin/users');const j=await r.json().catch(()=>({}));const box=ov.querySelector('.gusers');
 if(!r.ok){box.innerHTML='<p class="gload">Не получилось загрузить игроков</p>';return}
 box.innerHTML=j.users.map(u=>{let h=0;for(const c of u.login)h=(h*31+c.charCodeAt(0))%360;const p=u.pending[0]||u.pending[1]?`<em>ждёт: ${u.pending[0]?'+'+u.pending[0]+' соуса ':''}${u.pending[1]?'+'+u.pending[1]+' дрипа':''}</em>`:'';
 return`<button type="button" class="gu${sel===u.id?' on':''}" data-id="${u.id}" style="--ah:${h}"><span class="av">${e([...u.login][0]||'?')}</span><span class="gun"><b>${e(u.login)}${u.admin?' <i>админ</i>':''}</b><small>${u.sa==null?'ещё не играл':`соус ${u.sa} · дрип ${u.dr}`}</small>${p}</span></button>`}).join('')||'<p class="gload">Игроков нет</p>';
 box.querySelectorAll('.gu').forEach(b=>b.onclick=()=>{sel=b.dataset.id;box.querySelectorAll('.gu').forEach(x=>x.classList.toggle('on',x===b));upd()})};
 send.onclick=async()=>{send.disabled=true;msg.className='gmsg';msg.textContent='Отправляю…';
-const r=await fetch('/api/admin/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:sel,sa:+sa.value||0,dr:+dr.value||0,note:ov.querySelector('#gnote').value})});const j=await r.json().catch(()=>({}));
+const r=await DLF('/api/admin/gift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:sel,sa:+sa.value||0,dr:+dr.value||0,note:ov.querySelector('#gnote').value})});const j=await r.json().catch(()=>({}));
 if(r.ok){msg.className='gmsg ok';msg.textContent='Готово. Игрок получит подарок в течение 20 секунд, если сейчас на сайте, или при следующем заходе.';sa.value='';dr.value='';load();if(sel===(window.DL_ME||{}).id)setTimeout(()=>window.checkGifts&&checkGifts(),300)}
 else{msg.className='gmsg bad';msg.textContent=j.error||'Ошибка'}upd()};load()}
 (function(){if(!window.DL_ME)return;let busy=false;
 window.checkGifts=async function(){if(busy||typeof READY==='undefined'||!READY||!GM)return;busy=true;try{
-const r=await fetch('/api/gifts',{cache:'no-store'});if(!r.ok)return;const L=(await r.json()).gifts||[];if(!L.length)return;
-const c=await fetch('/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:L.map(x=>x.id)})});const got=((await c.json()).gifts)||[];if(!got.length)return;
+const r=await DLF('/api/gifts',{cache:'no-store'});if(!r.ok)return;const L=(await r.json()).gifts||[];if(!L.length)return;
+const c=await DLF('/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:L.map(x=>x.id)})});const got=((await c.json()).gifts)||[];if(!got.length)return;
 let s=0,d=0;got.forEach(g=>{s+=+g.sa||0;d+=+g.dr||0});GM.sa+=s;GM.dr+=d;commit();if(typeof drawShop==='function'&&tabNow()==='shop')drawShop();
 const from=[...new Set(got.map(g=>g.from))].join(', '),note=got.map(g=>g.note).filter(Boolean).join('; ');
 toast(`Подарок от ${from}: ${s?'+'+s+' соуса':''}${s&&d?' и ':''}${d?'+'+d+' дрипа':''}${note?' — '+note:''}`)}catch(e){}finally{busy=false}};
