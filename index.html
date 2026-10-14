@@ -730,6 +730,59 @@ body>.gmod{max-width:none!important;width:auto!important;grid-column:auto!import
 .ed.in{opacity:.6;stroke-width:1.5;stroke-dasharray:none}
 .ed.in.hl{opacity:1;stroke-width:2.4}
 .ed.in.dim{opacity:.05}
+
+/* ---- Azeroy ---- */
+.azwin{border:2px solid #0a0a7a;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#1414ff 0%,#5a5aff 45%,#e9e9ff 100%);box-shadow:0 18px 50px rgba(5,0,40,.6);color:#0b0b3a}
+.azbar{display:flex;align-items:center;gap:10px;padding:7px 10px;background:linear-gradient(180deg,#2c5cff,#0a2bd6);color:#fff;font:700 13px Tahoma,Verdana,sans-serif;border-bottom:2px solid #06107a}
+.azbar span{display:flex;gap:1px}.azbar span .azi{width:18px;height:18px}.azbar b{flex:1}.azx{width:22px;height:22px;border:1px solid #fff;border-radius:4px;background:linear-gradient(180deg,#ff7a5c,#d93a12);color:#fff;font:700 15px/1 Tahoma,sans-serif;cursor:pointer;padding:0}.azbar em{font-style:normal;font-weight:400;font-size:12px;opacity:.85}
+.azi{display:inline-block;width:34px;height:34px;background:var(--gc,#6dff72);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;filter:drop-shadow(0 0 .6px #000) drop-shadow(0 0 .6px #000) drop-shadow(0 0 .6px #000)}
+.aztabs{display:flex;gap:4px;padding:8px 8px 0}
+.aztabs button{flex:1;padding:9px 6px;border:2px solid #06107a;border-bottom:0;border-radius:8px 8px 0 0;background:#c9c9ff;color:#0b0b3a;font:700 13px Tahoma,Verdana,sans-serif;cursor:pointer}
+.aztabs button.on{background:#f4f4ff}
+.azbody{background:rgba(244,244,255,.94);margin:0 8px 8px;border:2px solid #06107a;border-radius:0 0 8px 8px;padding:14px;min-height:300px}
+.azlead{margin:0 0 12px;font-size:14px;color:#2a2a6a}
+.azlist{display:grid;gap:8px}
+.azcard{display:flex;align-items:center;gap:12px;padding:10px 12px;border:2px solid #9a9aff;border-radius:10px;background:#fff;color:#0b0b3a;text-align:left;cursor:pointer;font:inherit}
+.azcard:disabled{opacity:.45;cursor:default}.azcard.done{border-color:#22b14c;background:#eafff0}
+.azno{font:800 18px Tahoma,sans-serif;color:#4040ff;min-width:28px}.azct{flex:1;display:flex;flex-direction:column}.azct small{color:#55558a;font-size:12px}
+.azmini{display:flex}.azmini .azi{width:22px;height:22px}
+.azback{border:0;background:none;color:#2020c0;font:700 13px Tahoma,sans-serif;cursor:pointer;padding:0;margin-bottom:6px}
+.azh{margin:0 0 8px;font:800 20px Unbounded,sans-serif;color:#0b0b3a}
+.azmiss{display:flex;align-items:center;gap:4px;margin-bottom:12px}.azmiss i{width:16px;height:8px;border-radius:2px;background:#c9c9ff;border:1px solid #6a6ad0}.azmiss i.x{background:#ff3b3b;border-color:#9a0000}.azmiss span{margin-left:6px;font-size:12px;color:#7a0000;font-weight:700}
+.azcipher{display:flex;flex-wrap:wrap;gap:6px 18px;padding:12px;border-radius:10px;background:linear-gradient(180deg,#1414ff,#6a6aff);margin-bottom:12px}
+.azw{display:flex;gap:2px}
+.azg{display:flex;flex-direction:column;align-items:center;gap:2px;width:42px;padding:4px 0 3px;border:2px solid transparent;border-radius:8px;background:rgba(255,255,255,.08);cursor:pointer}
+.azg b{min-height:18px;width:26px;border-bottom:2px solid rgba(255,255,255,.7);color:#fff;font:800 15px Tahoma,sans-serif;text-align:center}
+.azg.k b{color:#b6ffb9;border-color:transparent}.azg.k{cursor:default}
+.azg.sel{border-color:#ffe066;background:rgba(255,224,102,.22)}
+.azg.bad{animation:azsh .35s}@keyframes azsh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.azkb{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.azkb button,.azopts button{padding:10px 0;border:2px solid #06107a;border-radius:7px;background:linear-gradient(180deg,#fff,#d4d4ff);color:#0b0b3a;font:800 15px Tahoma,sans-serif;cursor:pointer}
+.azkb button:active,.azopts button:active{transform:translateY(1px)}
+.azact{margin-top:10px;display:flex;justify-content:flex-end}
+.azhint,.azgo{padding:10px 14px;border:2px solid #06107a;border-radius:8px;background:linear-gradient(180deg,#fff7c2,#ffd84a);color:#3a2a00;font:800 14px Tahoma,sans-serif;cursor:pointer}
+.azhint:disabled{opacity:.5;cursor:default}
+.azgo{width:100%;margin-top:12px;padding:13px}
+.azread{margin-top:6px;padding:12px;border-radius:10px;background:#fff;border:2px solid #22b14c}
+.azread p{margin:0 0 8px;color:#1a1a4a}.azplain{font:700 13px Tahoma,sans-serif;color:#4040a0!important;letter-spacing:.06em}
+.azred{color:#e00000!important;font:900 15px Tahoma,sans-serif!important;letter-spacing:.12em;margin:0 0 6px}
+.azvoice{color:#a00000;font-style:italic}
+.azstart{display:grid;grid-template-columns:1fr 1fr;gap:8px}.azstart div{padding:12px;border-radius:10px;background:#fff;border:2px solid #9a9aff;text-align:center}.azstart b{display:block;font:800 24px Unbounded,sans-serif;color:#2020c0}.azstart span{font-size:12px;color:#55558a}
+.azhud{display:flex;align-items:center;gap:10px;margin-bottom:8px;font:700 13px Tahoma,sans-serif;color:#1a1a5a}.azhud b{font-size:16px;color:#2020c0}
+.azclean{flex:1;height:12px;border-radius:6px;background:#d9d9ff;border:1px solid #6a6ad0;overflow:hidden}.azclean i{display:block;height:100%;background:linear-gradient(90deg,#ff9a9a,#ff1f1f);transition:width .25s}
+.azarena{position:relative;height:320px;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#0909b8,#4b4bff 60%,#c9c9ff);border:2px solid #06107a}
+.azarena.ok{animation:azok .3s}.azarena.bad{animation:azbad .35s}@keyframes azok{50%{box-shadow:inset 0 0 0 4px #4dff6a}}@keyframes azbad{50%{box-shadow:inset 0 0 0 6px #ff2a2a}}
+.azscan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 1px,transparent 1px 3px)}
+.azfall{position:absolute;transform:translate(-50%,-10%);display:flex;flex-direction:column;align-items:center}
+.azfall .azi.big{width:70px;height:70px}.azfall small{color:#fff;opacity:.6;font:800 14px Tahoma,sans-serif}
+.azfw{display:flex;gap:2px;padding:4px 8px;border-radius:8px;background:rgba(0,0,40,.3)}.azfw .azi{width:40px;height:40px}
+.azopts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.azover{text-align:center}
+.azdict{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.azd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:8px;background:#e2e2ff;border:2px solid #b4b4f0;position:relative}
+.azd .azi{--gc:#9c9cc8}.azd.k{background:#fff;border-color:#22b14c}.azd.k .azi{--gc:#6dff72}
+.azd b{font:800 14px Tahoma,sans-serif;color:#2020c0}.azd small{position:absolute;top:3px;right:5px;font-size:10px;color:#55558a}
+@media (max-width:520px){.azkb{grid-template-columns:repeat(7,1fr)}.azg{width:36px}.azg .azi{width:28px;height:28px}.azarena{height:240px}}
 </style>
 </head>
 <body>
@@ -788,6 +841,7 @@ if(r.ok){m.className='am ok';m.textContent='Пароль изменён';setTime
 
 <section id="net" class="panel" hidden><svg id="nsvg" viewBox="0 0 360 440" role="img" aria-label="Граф связей исполнителей"></svg><div class="chips" id="nleg"></div><div class="scene" id="ninfo" style="margin-top:12px"><span class="sub">Нажми на пластинку и увидишь, с кем она связана. Острова это объединения, тонкие линии между ними совместные работы. Стрелка идёт от вдохновителя к тому, кого он вдохновил, и в списке связей видна только у вдохновлённого. Светящиеся пластинки уже найдены в ящиках.</span></div></section>
 <section id="sky" class="panel" hidden><div id="skybox"></div></section>
+<section id="az" class="panel" hidden><div id="azbox"></div></section>
 <section id="shop" class="panel" hidden><div id="shopbox"></div></section>
 <section id="resto" class="panel" hidden><div id="resto"></div></section>
 <section id="dist" class="panel" hidden><div id="distbox"></div></section>
@@ -922,16 +976,16 @@ const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r
 S("--ry",(x*18).toFixed(1)+"deg");S("--rx",(-y*18).toFixed(1)+"deg");S("--tx",(-x*16).toFixed(1)+"px");S("--ty",(-y*16).toFixed(1)+"px");S("--gx",(x*100+50).toFixed(0)+"%");S("--gy",(y*100+50).toFixed(0)+"%");S("--go",".55")});
 ["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{tiltReset(CUR);CUR=null}));
 /* tabs: three sections with sub-tabs */
-const TIC={resto:'<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="2.4"/><path d="M19 2.5l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"/>',dig:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.6"/><path d="M12 3v3"/>',map:'<path d="M12 21s-6.5-5.4-6.5-10.5a6.5 6.5 0 1 1 13 0C18.5 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/>',net:'<circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="9" r="2.2"/><circle cx="11" cy="18" r="2.2"/><path d="M8 7.6l8 1M7.2 9l3 7M17 11l-5 6"/>',sky:'<path d="M7 18h10.5a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6-1.300A4.600 4.600 0 0 0 7 18z"/>',shelf:'<rect x="4" y="4" width="4.5" height="16" rx="1.2"/><rect x="10" y="4" width="4.5" height="16" rx="1.2"/><path d="M16.5 6.5l3.6.9-3.2 12.2-3.6-.9z"/>',shop:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',dist:'<path d="M3 20V9l5-4 5 4v11M13 20V12l4-3 4 3v8M3 20h18"/>'};
+const TIC={az:'<path d="M12 3l2.2 5.6L20 9l-4.5 3.8L17 19l-5-3.1L7 19l1.5-6.2L4 9l5.8-.4z"/>',resto:'<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="2.4"/><path d="M19 2.5l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"/>',dig:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.6"/><path d="M12 3v3"/>',map:'<path d="M12 21s-6.5-5.4-6.5-10.5a6.5 6.5 0 1 1 13 0C18.5 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.2"/>',net:'<circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="9" r="2.2"/><circle cx="11" cy="18" r="2.2"/><path d="M8 7.6l8 1M7.2 9l3 7M17 11l-5 6"/>',sky:'<path d="M7 18h10.5a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6-1.300A4.600 4.600 0 0 0 7 18z"/>',shelf:'<rect x="4" y="4" width="4.5" height="16" rx="1.2"/><rect x="10" y="4" width="4.5" height="16" rx="1.2"/><path d="M16.5 6.5l3.6.9-3.2 12.2-3.6-.9z"/>',shop:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',dist:'<path d="M3 20V9l5-4 5 4v11M13 20V12l4-3 4 3v8M3 20h18"/>'};
 const SECT={dig:[["dig","Диггинг"],["shop","Магазин"],["resto","Реставратор"]],world:[["map","Карта"],["net","Связи"],["sky","Жанры"]],me:[["shelf","Полка"],["dist","Блок"]]},SLAST={dig:"dig",world:"map",me:"shelf"};
-let CURT="dig";const secOf=t=>Object.keys(SECT).find(k=>SECT[k].some(x=>x[0]===t));
-function drawSub(){const sec=secOf(CURT),el=$("#subnav");if(!el)return;if(!sec){el.innerHTML="";el.hidden=true;return}el.hidden=false;const L=SECT[sec],ix=L.findIndex(x=>x[0]===CURT);
+let CURT="dig";const secOf=t=>t==="az"?"world":Object.keys(SECT).find(k=>SECT[k].some(x=>x[0]===t));
+function drawSub(){const sec=secOf(CURT),el=$("#subnav");if(!el)return;if(!sec){el.innerHTML="";el.hidden=true;return}el.hidden=false;const L=SECT[sec],ix=L.findIndex(x=>x[0]===(CURT==="az"?"sky":CURT));
 el.style.setProperty("--n",L.length);el.style.setProperty("--i",ix);el.innerHTML=L.map(([t,n])=>`<button role="tab" aria-selected="${t===CURT}" data-t="${t}"><svg viewBox="0 0 24 24" aria-hidden="true">${TIC[t]}</svg>${n}</button>`).join("");
 el.querySelectorAll("button").forEach(b=>b.onclick=()=>goTab(b.dataset.t))}
-function goTab(t){CURT=t;const sec=secOf(t);if(sec)SLAST[sec]=t;const nv=document.querySelector("nav");const si=["dig","world","me"].indexOf(sec);nv.style.setProperty("--i",Math.max(0,si));nv.classList.toggle("addon",t==="add");
+function goTab(t){CURT=t;const sec=secOf(t);if(sec&&t!=="az")SLAST[sec]=t;const nv=document.querySelector("nav");const si=["dig","world","me"].indexOf(sec);nv.style.setProperty("--i",Math.max(0,si));nv.classList.toggle("addon",t==="add");
 nv.querySelectorAll(".nsec button").forEach(b=>{if(b.dataset.s===sec)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
 document.querySelectorAll(".panel").forEach(p=>p.hidden=p.id!==t);drawSub();
-if(t==="map")drawMap();if(t==="shelf")drawShelf();if(t==="net"){const v=$("#nsvg");v.classList.add("enter");setTimeout(()=>v.classList.remove("enter"),1800);drawNet()};if(t==="add")drawAdd();if(t==="shop")drawShop();if(t==="resto")drawResto();if(t==="dist")drawDist();if(t==="sky")drawSky();
+if(t==="map")drawMap();if(t==="shelf")drawShelf();if(t==="net"){const v=$("#nsvg");v.classList.add("enter");setTimeout(()=>v.classList.remove("enter"),1800);drawNet()};if(t==="add")drawAdd();if(t==="shop")drawShop();if(t==="resto")drawResto();if(t==="dist")drawDist();if(t==="sky")drawSky();if(t==="az"&&window.drawAz)drawAz();
 if(window.scrollY>200)window.scrollTo({top:0,behavior:"smooth"})}
 document.querySelectorAll("nav .nsec button").forEach(b=>b.onclick=()=>goTab(SLAST[b.dataset.s]));
 document.querySelector("nav .nadd").onclick=()=>goTab("add");drawSub();
@@ -1289,7 +1343,7 @@ const dflt=raw=>{const a=A.find(x=>x.raw===raw),d=a?a.d:2,h=hash(raw)%100;return
 const rrk=raw=>{const v=RC.as[slug(raw)]!=null?RC.as[slug(raw)]:RC.as[raw];return v!=null&&v!==""&&Number.isInteger(+v)&&+v>=0&&+v<7?+v:dflt(raw)};
 const rr=i=>rrk(A[i].raw),price=i=>RC.r[rr(i)].p;
 const rbadge=i=>`<span class="rbd" style="--rc:${RC.r[rr(i)].c}">${esc(RC.r[rr(i)].n)}</span>`;
-function normGM(g){try{g=g?JSON.parse(JSON.stringify(g)):{}}catch(e){g={}}return{sa:+g.sa>=0?+g.sa:0,dr:+g.dr>=0?+g.dr:0,own:g.own&&typeof g.own==="object"?g.own:{},st:+g.st||0,q:g.q||null,qc:g.qc||"",dq:g.dq&&g.dq.n!=null?{n:+g.dq.n||0,lock:+g.dq.lock||0}:null,tp:g.tp&&typeof g.tp==="object"?{n:+g.tp.n||0,at:+g.tp.at||0}:null,dist:g.dist&&typeof g.dist==="object"&&g.dist.b?g.dist:{b:{},sh:[]},pq:g.pq&&g.pq.text&&Array.isArray(g.pq.opts)?g.pq:null,rl:g.rl&&typeof g.rl==="object"&&!Array.isArray(g.rl)?g.rl:{},rsOpen:g.rsOpen?1:0}}
+function normGM(g){try{g=g?JSON.parse(JSON.stringify(g)):{}}catch(e){g={}}return{sa:+g.sa>=0?+g.sa:0,dr:+g.dr>=0?+g.dr:0,own:g.own&&typeof g.own==="object"?g.own:{},st:+g.st||0,q:g.q||null,qc:g.qc||"",dq:g.dq&&g.dq.n!=null?{n:+g.dq.n||0,lock:+g.dq.lock||0}:null,tp:g.tp&&typeof g.tp==="object"?{n:+g.tp.n||0,at:+g.tp.at||0}:null,dist:g.dist&&typeof g.dist==="object"&&g.dist.b?g.dist:{b:{},sh:[]},pq:g.pq&&g.pq.text&&Array.isArray(g.pq.opts)?g.pq:null,rl:g.rl&&typeof g.rl==="object"&&!Array.isArray(g.rl)?g.rl:{},rsOpen:g.rsOpen?1:0,az:g.az&&typeof g.az==="object"?g.az:{}}}
 function readGM(){try{const t=localStorage.getItem(LSK("gm"));if(t)return normGM(JSON.parse(t))}catch(e){}return{sa:40,dr:1,own:{},st:0,q:null,qc:"",dq:null,tp:null,dist:{b:{},sh:[]},pq:null}}
 GM=readGM();
 function syncOwn(){bag.forEach(i=>{const n=A[i].a;if(!GM.own[n])GM.own[n]={c:2,n:1}})}
@@ -1437,10 +1491,11 @@ return`<div class="gcard" style="--gc:${gs[0]?gs[0].c:"#C084FC"}"><p class="gk">
 if(GSEL){const g=GEN.find(z=>z.id===GSEL),m=gArt(g),f=m.filter(has).length;
 return`<div class="gcard" style="--gc:${g.c}"><p class="gk">${esc(g.ru)}</p><h2>${esc(g.n)}</h2><p>${esc(g.d)}</p><div class="gprog"><i style="width:${m.length?Math.round(f/m.length*100):0}%"></i></div><p class="hint2">Найдено ${f} из ${m.length}</p><p class="gk" style="margin-top:14px">История</p><ol class="ghist">${g.h.map(([y,t])=>`<li><b>${esc(y)}</b><span>${esc(t)}</span></li>`).join("")}</ol><p class="gk">Представители</p><div class="garts">${m.map(i=>chipA(i,(g.al||{})[un(A[i].a)]||"")).join("")}</div>${(()=>{const rel=GREL.filter(e=>e.includes(g.id)).map(e=>GEN.find(z=>z.id===(e[0]===g.id?e[1]:e[0])));return rel.length?`<p class="gk" style="margin-top:14px">Соседние облака</p><div class="gtags">${rel.map(z=>`<button class="gtag" data-g="${z.id}" style="--gc:${z.c}">${esc(z.n)}</button>`).join("")}</div>`:""})()}</div>`}
 return`<div class="gcard"><p class="sub" style="margin:0">Каждое облако это жанр. Чем больше облако, тем больше в нём исполнителей, а чем ярче, тем больше из них ты уже нашёл. Нажми на облако, чтобы узнать историю, или выбери исполнителя сверху, и небо покажет, куда копать дальше.</p></div>`}
+let AZT=[];
 function drawSky(){const box=$("#skybox");if(!box)return;const opts=A.map((a,i)=>[un(a.a),i]).filter(([n,i])=>gOf(i).length).sort((a,b)=>a[0].localeCompare(b[0]));
 box.innerHTML=`<label class="glike"><span>Если тебе нравится</span><select id="glk"><option value="">выбери исполнителя</option>${opts.map(([n,i])=>`<option value="${i}"${i===GLIKE?" selected":""}>${esc(n)}</option>`).join("")}</select>${GLIKE!=null?'<button id="glx" aria-label="Сбросить">×</button>':""}</label>${skySvg()}<div id="skyinfo">${skyInfo()}</div>`;
 $("#glk").onchange=e=>{GLIKE=e.target.value===""?null:+e.target.value;GSEL=null;drawSky()};const gx=$("#glx");if(gx)gx.onclick=()=>{GLIKE=null;drawSky()};
-box.querySelectorAll(".gcl").forEach(c=>{const go=()=>{GSEL=GSEL===c.dataset.g?null:c.dataset.g;GLIKE=null;drawSky();const inf=$("#skyinfo");if(GSEL&&inf&&inf.scrollIntoView)inf.scrollIntoView({behavior:"smooth",block:"nearest"})};c.onclick=go;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
+box.querySelectorAll(".gcl").forEach(c=>{const go=()=>{if(c.dataset.g==="yab"){const n=Date.now();AZT=AZT.filter(x=>n-x<1500);AZT.push(n);if(AZT.length>=3){AZT=[];goTab("az");return}}else AZT=[];GSEL=GSEL===c.dataset.g?null:c.dataset.g;GLIKE=null;drawSky();const inf=$("#skyinfo");if(GSEL&&inf&&inf.scrollIntoView)inf.scrollIntoView({behavior:"smooth",block:"nearest"})};c.onclick=go;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
 box.querySelectorAll(".gtag").forEach(b=>b.onclick=()=>{GSEL=b.dataset.g;GLIKE=null;drawSky()});
 box.querySelectorAll(".gart").forEach(b=>b.onclick=()=>{nsel=+b.dataset.i;goTab("net")})}
 /* drop art v2: isometric crates */
@@ -1932,5 +1987,6 @@ const from=[...new Set(got.map(g=>g.from))].join(', '),note=got.map(g=>g.note).f
 const bn=[...new Set(built)].map(id=>(bdef(id)||{n:id}).n).join(', ');toast(`Подарок от ${from}: ${[s?'+'+s+' соуса':'',d?'+'+d+' дрипа':'',bn?'готово: '+bn:''].filter(Boolean).join(', ')}${note?' — '+note:''}`)}catch(e){}finally{busy=false}};
 setTimeout(checkGifts,2500);setInterval(checkGifts,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGifts()})})();
 </script>
+<script src="azeroy/az.js"></script>
 </body>
 </html>
