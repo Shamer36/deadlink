@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deadlink — вход</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0B0716">
+<style>
+:root{--bg:#0B0716;--ink:#F4EEFF;--mute:#A99BC9;--line:rgba(167,139,250,.24);--grad:linear-gradient(135deg,#7C3AED 0%,#A855F7 55%,#E879F9 100%);color-scheme:dark}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px;color:var(--ink);font:16px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(40% 35% at 18% 12%,rgba(124,58,237,.45),transparent 70%),radial-gradient(38% 32% at 85% 28%,rgba(232,121,249,.25),transparent 70%),radial-gradient(50% 40% at 50% 100%,rgba(76,29,149,.5),transparent 70%)}
+.box{width:100%;max-width:400px}
+.logo{margin:0 0 6px;font:800 clamp(48px,14vw,72px)/1 Unbounded,sans-serif;letter-spacing:-.05em;display:flex;gap:.12em;justify-content:center}
+.logo .d{color:transparent;-webkit-text-stroke:1.6px rgba(196,181,253,.6)}
+.logo .l{background:linear-gradient(180deg,#fff,#F0ABFC);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(232,121,249,.55))}
+.tag{text-align:center;color:var(--mute);margin:0 0 26px;font-size:14px}
+.card{background:linear-gradient(160deg,rgba(40,26,84,.62),rgba(20,13,43,.78));border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 18px 50px rgba(5,0,20,.55),inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:rgba(11,7,22,.55);border:1px solid var(--line);margin-bottom:18px}
+.tabs button{border:0;border-radius:10px;padding:10px;background:none;color:var(--mute);font:600 14px Manrope,sans-serif;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--grad);color:#fff}
+label{display:block;font-size:13px;color:var(--mute);margin:0 0 6px}
+input{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(11,7,22,.6);color:var(--ink);font:inherit;margin-bottom:14px;outline:none}
+input:focus{border-color:#C084FC;box-shadow:0 0 0 3px rgba(192,132,252,.2)}
+.go{width:100%;padding:13px;border:0;border-radius:14px;background:var(--grad);color:#fff;font:600 15px Unbounded,sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 10px 28px rgba(168,85,247,.4);margin-top:4px}
+.go:disabled{opacity:.6;cursor:default}
+.err{min-height:22px;margin:12px 0 0;font-size:14px;color:#FDA4AF;text-align:center}
+.note{font-size:12.5px;color:var(--mute);margin:-6px 0 14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main class="box">
+<h1 class="logo" aria-label="Deadlink"><span class="d">dead</span><span class="l">link</span></h1>
+<p class="tag">архив интернет-андера и электроники</p>
+<div class="card">
+<div class="tabs" role="tablist">
+<button type="button" role="tab" id="tIn" aria-selected="true">Вход</button>
+<button type="button" role="tab" id="tUp" aria-selected="false">Регистрация</button>
+</div>
+<form id="f" novalidate>
+<label for="login">Логин</label>
+<input id="login" name="login" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+<p class="note" id="lnote" hidden>От 3 до 20 символов: латиница, цифры, _ . -</p>
+<label for="pw">Пароль</label>
+<input id="pw" name="pw" type="password" autocomplete="current-password" required>
+<div id="rep" hidden>
+<label for="pw2">Пароль ещё раз</label>
+<input id="pw2" name="pw2" type="password" autocomplete="new-password">
+</div>
+<button class="go" id="go">Войти</button>
+<p class="err" id="err" role="alert"></p>
+</form>
+</div>
+</main>
+<script>
+let up=false;const $=id=>document.getElementById(id);
+function mode(u){up=u;$('tIn').setAttribute('aria-selected',!u);$('tUp').setAttribute('aria-selected',u);$('rep').hidden=!u;$('lnote').hidden=!u;
+$('go').textContent=u?'Создать аккаунт':'Войти';$('pw').autocomplete=u?'new-password':'current-password';$('err').textContent=''}
+$('tIn').onclick=()=>mode(false);$('tUp').onclick=()=>mode(true);
+$('f').onsubmit=async e=>{e.preventDefault();const login=$('login').value.trim(),password=$('pw').value,er=$('err');er.textContent='';
+if(!login||!password){er.textContent='Введи логин и пароль';return}
+if(up){if(!/^[A-Za-z0-9_.\-]{3,20}$/.test(login)){er.textContent='Логин: от 3 до 20 символов, латиница, цифры, _ . -';return}
+if(password.length<6){er.textContent='Пароль должен быть не короче 6 символов';return}
+if(password!==$('pw2').value){er.textContent='Пароли не совпадают';return}}
+$('go').disabled=true;
+try{const r=await fetch(up?'/api/register':'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login,password})});
+const j=await r.json().catch(()=>({}));if(r.ok){location.href='/';return}er.textContent=j.error||'Что-то пошло не так'}
+catch(x){er.textContent='Сервер не отвечает. Запущен ли ЗАПУСК.bat?'}
+$('go').disabled=false};
+</script>
+</body>
+</html>
