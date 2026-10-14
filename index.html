@@ -1920,9 +1920,12 @@ else{msg.className='gmsg bad';msg.textContent=j.error||'Ошибка'}upd()};loa
 window.checkGifts=async function(){if(busy||typeof READY==='undefined'||!READY||!GM)return;busy=true;try{
 const r=await DLF('/api/gifts',{cache:'no-store'});if(!r.ok)return;const L=(await r.json()).gifts||[];if(!L.length)return;
 const c=await DLF('/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:L.map(x=>x.id)})});const got=((await c.json()).gifts)||[];if(!got.length)return;
-let s=0,d=0;got.forEach(g=>{s+=+g.sa||0;d+=+g.dr||0});GM.sa+=s;GM.dr+=d;commit();if(typeof drawShop==='function'&&tabNow()==='shop')drawShop();
+let s=0,d=0;const built=[];got.forEach(g=>{s+=+g.sa||0;d+=+g.dr||0;
+const fix=(id,l)=>{const b=DD().b[id];if(!b)return;if(l==null){if(!b.tgt)return;b.lv=b.tgt}else b.lv=l;b.tgt=0;b.bt=0;if(!b.last)b.last=Date.now();built.push(id)};
+(g.fin||[]).forEach(id=>fix(id,null));if(g.lv&&typeof g.lv==='object')Object.entries(g.lv).forEach(([id,l])=>fix(id,Math.max(0,Math.min(5,+l||0))))});
+GM.sa+=s;GM.dr+=d;commit();if(typeof drawShop==='function'&&tabNow()==='shop')drawShop();if(built.length&&tabNow()==='dist')drawDist();
 const from=[...new Set(got.map(g=>g.from))].join(', '),note=got.map(g=>g.note).filter(Boolean).join('; ');
-toast(`Подарок от ${from}: ${s?'+'+s+' соуса':''}${s&&d?' и ':''}${d?'+'+d+' дрипа':''}${note?' — '+note:''}`)}catch(e){}finally{busy=false}};
+const bn=[...new Set(built)].map(id=>(bdef(id)||{n:id}).n).join(', ');toast(`Подарок от ${from}: ${[s?'+'+s+' соуса':'',d?'+'+d+' дрипа':'',bn?'готово: '+bn:''].filter(Boolean).join(', ')}${note?' — '+note:''}`)}catch(e){}finally{busy=false}};
 setTimeout(checkGifts,2500);setInterval(checkGifts,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGifts()})})();
 </script>
 </body>
