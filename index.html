@@ -676,6 +676,7 @@ body{position:relative}
 .aem .s2{background:rgba(167,139,250,.16)!important;box-shadow:none!important}
 .am.ok{color:#86efac}
 .apw[hidden]{display:none}
+.lfail{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:9999;width:min(420px,calc(100% - 32px));display:grid;gap:6px;padding:14px 16px;border-radius:16px;border:1px solid #fb7185;background:#2a0f1d;color:#ffe4e6;box-shadow:0 18px 50px rgba(0,0,0,.6)}.lfail span{font-size:13px;color:#fecdd3}.lfail button{justify-self:start;padding:8px 14px;border-radius:999px;border:0;background:#fb7185;color:#2a0f1d;font-weight:700;cursor:pointer}
 .av{overflow:hidden}.av img{width:100%;height:100%;object-fit:cover;display:block}
 .alnk{background:none;border:0;color:var(--mute);font:500 12.5px Manrope,sans-serif;text-decoration:underline;cursor:pointer;padding:2px}
 .ahead{display:flex;align-items:center;gap:12px;padding:10px 10px 14px}
@@ -943,8 +944,9 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(
 /* Deadlink local: замена облачного хранилища на локальный сервер (server.py) */
 (function(){
 let D=null,P=null;const subs={};
-const load=()=>P||(P=DLF('/api/db',{cache:'no-store'}).then(r=>{if(r.status===401){location.reload();throw new Error('login')}return r.json()}).then(j=>D=j));
+const load=()=>P||(P=DLF('/api/db',{cache:'no-store'}).then(r=>{if(r.status===401){location.reload();throw new Error('login')}if(!r.ok)throw new Error('db '+r.status);return r.json()}).then(j=>D=j).catch(e=>{P=null;throw e}));
 const cp=o=>o==null?o:JSON.parse(JSON.stringify(o));
+let ERRN=0;window.reportErr=function(e,where){try{if(ERRN++>5)return;DLF('/api/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({w:String(where||''),m:String(e&&e.message||e).slice(0,300),s:String(e&&e.stack||'').slice(0,1500),u:navigator.userAgent.slice(0,200),v:document.lastModified})}).catch(()=>{})}catch(_){}};
 const post=o=>DLF('/api/db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)}).then(r=>{if(r.status===401)location.reload();if(!r.ok)throw new Error('save failed')});
 const snap=c=>({docs:Object.entries(D[c]||{}).map(([id,d])=>({id,exists:true,data:()=>cp(d)}))});
 const notify=c=>(subs[c]||[]).forEach(f=>{try{f(snap(c))}catch(e){console.error(e)}});
@@ -1041,9 +1043,9 @@ A.forEach(a=>{a.rels=RX[a.a]||(a.t.startsWith("Релиз")?[]:[[a.t,a.y]])});
 const SEEDN=A.length;A.forEach(a=>{a.raw=a.a;a.rels0=a.rels.map((x,n)=>[x[0],x[1],"",n?"s:"+n:"m"]);a.o={c:a.c,t:a.t,y:a.y,l:a.l,d:a.d,note:a.note}});
 const $=s=>document.querySelector(s);
 let HIST=[];let bag=[];try{bag=JSON.parse(localStorage.getItem(LSK("bag"))||"[]")}catch(e){}
-let BAGN=[],UID=null,PT=0,GM=null;
+let BAGN=[],UID=null,PT=0,GM=null,SHELF_OK=false;
 const save=()=>{const cur=bag.map(i=>A[i].a);BAGN=[...new Set([...BAGN.filter(n=>!(n in IDX)),...cur])];try{localStorage.setItem(LSK("bag"),JSON.stringify(BAGN));localStorage.setItem(LSK("gm"),JSON.stringify(GM))}catch(e){}
-clearTimeout(PT);PT=setTimeout(()=>{if(DB&&UID)DB.doc("data/users/"+UID+"/shelf").set({b:BAGN,t:Date.now(),g:GM}).catch(()=>{})},500)};
+clearTimeout(PT);PT=setTimeout(()=>{if(DB&&UID&&SHELF_OK)DB.doc("data/users/"+UID+"/shelf").set({b:BAGN,t:Date.now(),g:GM}).catch(()=>{})},500)};
 const has=i=>bag.includes(i);
 const IMG0={"2hollis": "/_blob/c745238a6528c82d62eda4f45ca9a01e", "Aphex Twin": "/_blob/392feffab35093a16c8eca89cd1f172e", "Bladee": "/_blob/9e4d45fd11787137072050c95ab4d7fa", "Bleood": "/_blob/ad4bdfa65237c1ff22ffb6114ff91aa5", "Crystal Castles": "/_blob/ee466ab9db1f50fd7c98668d67fd7de6", "Diamondsonmydick": "/_blob/7476188812188b0a9864fab2c78f4ca7", "ear.": "/_blob/4dec7693a72cac21004df9707e9d8855", "Ecco2k": "/_blob/0b77fb645a725d6dfc9bdbfb7b0f4426", "Hi-C": "/_blob/082739058a91bd2924639f331a7d5b4e", "Jackstauber": "/_blob/319d853aab87c8bcf4243cba41bb8012", "kmoe": "/_blob/7904ca13a956026a9219653ba8423d72", "Luci4": "/_blob/f266a50ddd611f76ef458b61b44873e8", "Lucy Bedroque": "/_blob/eb0072adfe30fa7df2975b8ea8e8698c", "Marjorie W.C. Sinclair": "/_blob/b49f6d66a84ee0111b0e1a999c9636d1", "Mattproxy": "/_blob/05d268515279e0ed11a07d0b736660e1", "Nettspend": "/_blob/d40baf58dc78c780dc4ca68fbcc8a2d9", "Prettifun": "/_blob/8e565046b9bf0d13d09d67a79707b14f", "SpaceGhostPurrp": "/_blob/a1fe4ed64cc7b2bf49af8aedd696e76d", "Thaiboy Digital": "/_blob/68de1d6fd21eb6dbcc0fd795644de0ce", "Whitearmor": "/_blob/b09e7367c66dca0006cc9f51aa382819", "Wifiskeleton": "/_blob/fed24797690b98c930b22bfcca96a8f4", "Yabujin": "/_blob/4a1219ba30536dbe6412824ed33972c8", "Yuke": "/_blob/b1cc19c32e716ddf0d4472deaf43ce89", "Yung Lean": "/_blob/59f8fec79dd47a363fd7bf8e25823e17", "Yung Sherman": "/_blob/5e952c7d43502f1ea087464bce76c72b", "Ghost Mountain": "/_blob/fbb17f8dced1c3df72216ee5acbd3704", "Egobreak": "/_blob/49123c26eaa2e5dafc95b1f512497121", "fakemink": "/_blob/b964a631faa084b4cd5c4aa0890c6b19", "Buckshot": "/_blob/1fa525ac0936454c662fd7b2bd5a6d05", "Hunned Mill": "/_blob/7015052593563693293f17f9788e5a43", "Karmah": "/_blob/2306412e7dc9d6c2587840989121a3e1", "Luckaleannn": "/_blob/afffb2abbb96c1170c622afc88d11c52", "Marcy Mane": "/_blob/3d8c6ced9c72844d3b8ff626c45f2c24", "Haru Matsui": "/_blob/66d0dfea86b333ad1337c06d3c29c0c6", "Zatru": "/_blob/cd1bd8e206110426ec9f59171ecd11b0", "Cartier'god": "/_blob/a3840588d02d1ab8cfa3145785f74c6b", "Xaviersobased": "/_blob/8bb06ec525ae796e3e131c52ba319b63", "Kane Grocerys": "/_blob/61ac04493c57fd2f35a212d25a50ea0e", "Hackle": "/_blob/28caf7105c76977655cfdbff11969a26", "Morgue": "/_blob/d9f239f1926bb06d02c9fad6f616bf24", "Phreshboyswag": "/_blob/42c20004f04bd993f604630503a45acb", "Turnabout": "/_blob/acc6d3b56b8632f4c86afde0c6cadf35", "Black Kray": "/_blob/02b0b9a0f55cf2b83c6d9ea47d4fc2c9", "Whitener": "/_blob/53d769dc7f98a1ad60d05f768cadb7ba", "Jane Remover": "/_blob/7ac24ce7922c0b29c933a5425f606393", "Tarabandz": "/_blob/069b64c998cb8301eb40b956aff27d4d"};
 const IMG={...IMG0};
@@ -1260,7 +1262,8 @@ let LOC={places:{},artists:{},releases:{},links:{},groups:{},edits:{},config:{}}
 const tabNow=()=>CURT;
 const lsave=()=>{try{localStorage.setItem("ugx",JSON.stringify(LOC))}catch(e){}};
 const msg=t=>{const f=t+(DB?"":" Сохранено только в этом браузере, общая база недоступна."),m=$("#addmsg");if(m)m.textContent=f;toast(f)};
-function sched(){clearTimeout(TM);TM=setTimeout(applyExtras,60)}
+function sched(){clearTimeout(TM);TM=setTimeout(()=>{try{applyExtras()}catch(e){reportErr(e,'applyExtras');try{renderWallet()}catch(_){}}},60)}
+function loadFail(){const d=document.createElement('div');d.className='lfail';d.innerHTML='<b>Не получилось загрузить твоё сохранение</b><span>Прогресс на сервере цел, но эта вкладка его не получила. Изменения здесь не сохранятся.</span><button type="button">Обновить страницу</button>';d.querySelector('button').onclick=()=>location.reload();document.body.appendChild(d)}
 function addG(n,g){(G[n]=G[n]||[]);if(!G[n].includes(g))G[n].push(g)}
 const okId=u=>/^[0-9a-f]{32}$/.test(String(u||""));
 const okUrl=u=>{try{const x=new URL(String(u||"").trim());return x.protocol==="https:"||x.protocol==="http:"?x.href:""}catch(e){return ""}};
@@ -1288,7 +1291,7 @@ Object.entries(LOC.releases).forEach(([id,r])=>{const a=A.find(a=>a.a===esc(r.a)
 Object.values(LOC.groups).forEach(g=>(g.m||[]).forEach(n=>addG(esc(n),esc(g.n))));
 Object.values(LOC.links).forEach(l=>EX.push([esc(l.a),esc(l.b),esc(l.t||(l.d?"":"связь")),l.d?1:0]));
 graphBuild();Object.keys(GR).forEach(k=>{if(!GC[k])GC[k]=`hsl(${hash(k)%360},65%,45%)`});
-bag=names.map(n=>IDX[n]).filter(x=>x!=null);NP=null;loadRC();syncOwn();ensureCP();settleAll();renderWallet();
+bag=names.map(n=>IDX[n]).filter(x=>x!=null);NP=null;[loadRC,syncOwn,ensureCP,settleAll].forEach(f=>{try{f()}catch(e){reportErr(e,f.name)}});renderWallet();
 const t=tabNow();if(t==="dig")deal();if(t==="map")drawMap();if(t==="net")drawNet();if(t==="shelf")drawShelf();if(t==="add")drawMine();if(t==="shop")drawShop();if(t==="dist")drawDist();if(t==="resto")drawResto()}
 async function put(c,id,d){LOC[c][id]=d;if(DB){try{await DB.collection(c).doc(id).set(d)}catch(e){delete LOC[c][id];applyExtras();msg("Не получилось сохранить в общую базу: "+(e.code||e.message)+". Возможно, у тебя нет прав записи.");return false}}else lsave();applyExtras();return true}
 async function rm(c,id){const o=LOC[c][id];delete LOC[c][id];if(DB){try{await DB.collection(c).doc(id).delete()}catch(e){LOC[c][id]=o;msg("Не получилось удалить: "+(e.code||e.message))}}else lsave();applyExtras()}
@@ -1413,7 +1416,7 @@ try{u=await claude.use("user")}catch(e){}
 try{DB=await claude.use("db")}catch(e){DB=null}
 try{AS=await claude.use("assets")}catch(e){AS=null}
 try{UID=u&&u.id?await u.id():null}catch(e){UID=null}
-if(DB&&UID){try{const sn=await DB.doc("data/users/"+UID+"/shelf").get();if(sn.exists){const b=(sn.data().b||[]).map(String);BAGN=[...new Set([...BAGN,...b])];if(sn.data().g)GM=normGM(sn.data().g)}}catch(e){}}
+if(DB&&UID){for(let k=0;k<4&&!SHELF_OK;k++){try{const sn=await DB.doc("data/users/"+UID+"/shelf").get();if(sn.exists){const b=(sn.data().b||[]).map(String);BAGN=[...new Set([...BAGN,...b])];if(sn.data().g)GM=normGM(sn.data().g)}SHELF_OK=true}catch(e){if(k===3){reportErr(e,"shelf load");loadFail()}else await new Promise(r=>setTimeout(r,1500*(k+1)))}}}
 if(DB){try{CANW=u&&u.can?await u.can("data.write"):null}catch(e){}
 ["places","artists","releases","links","groups","edits","config"].forEach(c=>DB.collection(c).onSnapshot(sn=>{LOC[c]={};sn.docs.forEach(d=>{LOC[c][d.id]=d.data()});sched()},()=>{}))}
 else{try{LOC=Object.assign(LOC,JSON.parse(localStorage.getItem("ugx")||"{}"))}catch(e){}sched()}
@@ -1477,7 +1480,7 @@ function ridFind(a,k){const i=IDX[a];if(i==null||!A[i])return null;const ri=/^#\
 function addCopy(i,ri,c){c=Math.max(0,Math.min(4,c|0));if(!has(i)){bag.push(i);GM.own[A[i].a]={c,n:1};if(A[i].rels.length)RL()[A[i].a]=[]}if(!ownsRel(i,ri))markRel(i,ri);const k=rid(i,ri),C=CP();(C[k]=C[k]||[]).push(c);C[k].sort((x,y)=>y-x)}
 function takeCopy(i,ri,ix){const k=rid(i,ri),C=CP(),L=C[k];if(!L||!L.length)return null;if(ix==null||ix<0||ix>=L.length)ix=L.length-1;const c=L.splice(ix,1)[0];
 if(!L.length){delete C[k];const a=A[i].a,R=RL(),left=ownRels(i).filter(x=>x!==ri);if(!left.length){const p=bag.indexOf(i);if(p>=0)bag.splice(p,1);delete R[a];delete GM.own[a]}else R[a]=left.map(x=>rk(A[i].rels[x])).filter(Boolean);const D=DD();D.sh=(D.sh||[]).filter(shOk)}return c}
-function ensureCP(){if(!bag.length)return;const C=CP(),mig=!GM.cpv;bag.forEach(i=>{const o=GM.own[A[i].a]||{c:2,n:1},rs=ownRels(i);if(!rs.length)return;rs.forEach(k=>{const id=rid(i,k);if(!C[id]||!C[id].length)C[id]=[mig?Math.max(0,Math.min(4,+o.c||0)):2]});if(mig)for(let d=0;d<(+o.n||1)-1;d++)C[rid(i,rs[d%rs.length])].push(Math.max(0,Math.min(4,+o.c||0)))});Object.values(C).forEach(a=>a.sort((x,y)=>y-x));GM.cpv=1}
+function ensureCP(){const C0=CP();Object.keys(C0).forEach(k=>{if(!Array.isArray(C0[k]))delete C0[k];else{C0[k]=C0[k].map(x=>Math.max(0,Math.min(4,x|0)));if(!C0[k].length)delete C0[k]}});if(!bag.length)return;const C=CP(),mig=!GM.cpv;bag.forEach(i=>{const o=GM.own[A[i].a]||{c:2,n:1},rs=ownRels(i);if(!rs.length)return;rs.forEach(k=>{const id=rid(i,k);if(!C[id]||!C[id].length)C[id]=[mig?Math.max(0,Math.min(4,+o.c||0)):2]});if(mig)for(let d=0;d<(+o.n||1)-1;d++)C[rid(i,rs[d%rs.length])].push(Math.max(0,Math.min(4,+o.c||0)))});Object.values(C).forEach(a=>a.sort((x,y)=>y-x));GM.cpv=1}
 /* genre of the week: same for everyone, changes every Monday (UTC) */
 const isoWeek=()=>{const d=new Date(),t=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())),day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y=t.getUTCFullYear(),w=Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7);return y+"-W"+String(w).padStart(2,"0")};
 let GWC=null;function gotw(){const w=isoWeek();if(GWC&&GWC.w===w&&GWC.n===GEN.length)return GWC.g;const L=GEN.filter(g=>gArt(g).length>=3).sort((x,y)=>String(x.id).localeCompare(String(y.id)));const g=L.length?L[hash(w)%L.length]:null;GWC={w,g,n:GEN.length};return g}
@@ -1848,7 +1851,7 @@ function rarBind(){const g=()=>((LOC.config||{}).rarity)||{};
 $("#s_rar").onclick=async()=>{const r=[...document.querySelectorAll("#add .rrow")].map((x,k)=>({n:x.querySelector(".rn").value.trim()||RD[k].n,w:parseFloat(x.querySelector(".rw").value.replace(",","."))||RD[k].w,p:Math.max(0,parseInt(x.querySelector(".rp").value)||0),c:x.querySelector(".rcol").value}));if(await put("config","rarity",{r,as:g().as||{}})){drawAdd();msg("Редкости сохранены.")}};
 $("#s_ras").onclick=async()=>{const as={...(g().as||{})};document.querySelectorAll("#add .arow select").forEach(s=>{as[slug(s.dataset.n)]=+s.value});if(await put("config","rarity",{r:g().r||RC.r,as})){drawAdd();msg("Редкости исполнителей сохранены.")}}}
 /* ===== DISTRICT ===== */
-window.addEventListener("error",ev=>{try{toast("Ошибка: "+ev.message)}catch(_){}});
+window.addEventListener("error",ev=>{try{reportErr(ev.error||ev.message,"window");toast("Ошибка: "+ev.message)}catch(_){}});
 const BLD=[{id:"shop",n:"Магазин винила",c:40,i:10,t:"Приносит соус и открывает витрину для пластинок."},{id:"diner",n:"Закусочная",c:56,i:14,t:"Хороший доход соуса."},{id:"barber",n:"Барбершоп",c:24,i:6,t:"Немного соуса и плюс 4% хайпа за уровень."},{id:"graf",n:"Стена граффити",c:24,i:6,t:"Немного соуса и плюс 4% хайпа за уровень."},{id:"store",n:"Склад",c:30,i:0,t:"Плюс 4 часа к хранению дохода за уровень (базово 8)."},{id:"workshop",n:"Мастерская",c:40,i:0,t:"Реставрация у Дяди Славы дешевле на 10% за уровень."},{id:"studio",n:"Студия",c:50,i:0,t:"Плюс 1 соус за верный ответ за уровень."},{id:"club",n:"Клуб",d:8,i:0,t:"Особое здание за дрип. Здесь потом появятся друзья и рынок."}];
 const BI={shop:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/>',diner:'<path d="M10 3h4v4l2 3v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10l2-3z"/>',barber:'<circle cx="7" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><path d="M9 8.5L20 18M9 15.5L20 6"/>',graf:'<rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V6h4v3M18 5l2-1M18 8h3M18 11l2 1"/>',store:'<path d="M3 8l9-5 9 5v9l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v9"/>',workshop:'<path d="M14 6a4 4 0 0 1 5 5l-9 9a2 2 0 0 1-3-3z"/>',studio:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',club:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9z"/>'};
 const BH=[2,4,8,12,20],HP=[1,2,3,5,8,12,20],GW=5,GH=4,TAPMAX=150,TAPCUT=20000;
@@ -2111,7 +2114,7 @@ const r=await DLF('/api/admin/gift',{method:'POST',headers:{'Content-Type':'appl
 if(r.ok){msg.className='gmsg ok';msg.textContent='Готово. Игрок получит подарок в течение 20 секунд, если сейчас на сайте, или при следующем заходе.';sa.value='';dr.value='';fin.checked=false;load();if(sel===(window.DL_ME||{}).id)setTimeout(()=>window.checkGifts&&checkGifts(),300)}
 else{msg.className='gmsg bad';msg.textContent=j.error||'Ошибка'}upd()};load()}
 (function(){if(!window.DL_ME)return;let busy=false;
-window.checkGifts=async function(){if(busy||typeof READY==='undefined'||!READY||!GM)return;busy=true;try{
+window.checkGifts=async function(){if(busy||typeof READY==='undefined'||!READY||!GM||!SHELF_OK)return;busy=true;try{
 const r=await DLF('/api/gifts',{cache:'no-store'});if(!r.ok)return;const L=(await r.json()).gifts||[];if(!L.length)return;
 const c=await DLF('/api/gifts/claim',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:L.map(x=>x.id)})});const got=((await c.json()).gifts)||[];if(!got.length)return;
 let s=0,d=0,nr=0;const built=[];got.forEach(g=>{s+=+g.sa||0;d+=+g.dr||0;(Array.isArray(g.rec)?g.rec:[]).forEach(it=>{if(it&&window.giveItem){giveItem(it);nr++}});

@@ -500,6 +500,12 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
     return json(req, { ok: true, user: pub(u) })
   }
 
+  if (path === "/api/log" && method === "POST") {
+    const m = await me(req), q = await body(req)
+    console.error("CLIENT_ERROR " + JSON.stringify({ user: m ? m.name : null, w: String(q.w || "").slice(0, 60), m: String(q.m || "").slice(0, 300), s: String(q.s || "").slice(0, 1500), u: String(q.u || "").slice(0, 200), v: String(q.v || "").slice(0, 40) }))
+    return json(req, { ok: true })
+  }
+
   if (path === "/api/logout" && method === "POST") {
     const t = token(req); if (t) await db().delete("sess/" + t)
     return json(req, { ok: true })
