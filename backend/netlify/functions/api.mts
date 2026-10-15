@@ -341,7 +341,7 @@ async function club(req: Request, path: string, method: string): Promise<Respons
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/
 const normEmail = (e: unknown) => String(e || "").trim().toLowerCase()
 const pub = (u: User) => ({ id: u.id, name: u.login, admin: !!u.admin, email: u.email || "", google: !!u.gsub })
-const GOOGLE_CLIENT = "412045203172ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com"
+const GOOGLE_CLIENT = "412045203172-ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com"
 // проверяем Google ID-токен у самого Google; возвращаем подтверждённую почту и id аккаунта
 async function googleIdentity(cred: string): Promise<{ email: string; sub: string }> {
   const dev = Netlify.env.get("DEV_GOOGLE") && !Netlify.env.get("SITE_ID") && /^dev:([^:]+):(\w+)$/.exec(cred)

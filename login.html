@@ -79,7 +79,7 @@ input:focus{border-color:#C084FC;box-shadow:0 0 0 3px rgba(192,132,252,.2)}
 <script src="https://accounts.google.com/gsi/client" async onload="window.gInit&&gInit()" onerror="document.getElementById('gw').hidden=true"></script>
 <script>
 try{if(localStorage.getItem('dl_token')&&localStorage.getItem('dl_me'))location.replace('./')}catch(e){}
-let M='in',CD=0,GT=null;const GID='412045203172ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com';const $=id=>document.getElementById(id);
+let M='in',CD=0,GT=null;const GID='412045203172-ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com';const $=id=>document.getElementById(id);
 const post=(u,b)=>fetch(DL_API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(async r=>({ok:r.ok,j:await r.json().catch(()=>({}))}));
 function mode(m){M=m;$('gm').hidden=m!=='g';$('em').hidden=$('eml').hidden=m==='g';$('gw').hidden=m==='g';$('tIn').setAttribute('aria-selected',m!=='up'&&m!=='g');$('tUp').setAttribute('aria-selected',m==='up'||m==='g');
 $('eml').textContent=m==='in'?'Почта или ник':'Почта';$('em').type=m==='in'?'text':'email';$('cw').hidden=m==='in'||m==='g';$('nw').hidden=m!=='up'&&m!=='g';$('rep').hidden=m==='in';
