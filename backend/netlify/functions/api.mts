@@ -1,4 +1,4 @@
-// Deadlink API: аккаунты, общая база, полки, подарки, загрузки.
+// Deadlink API: аккаунты, общая база, полки, подарки, клуб, загрузки.
 // Сайт живёт на GitHub Pages, сюда ходит только за данными.
 import { getStore } from "@netlify/blobs"
 import type { Config, Context } from "@netlify/functions"
@@ -83,6 +83,256 @@ function applyOp(col: Record<string, any>, op: string, id: string, d: any) {
     col[id] = cur
   } else if (op === "delete") delete col[id]
   else throw new HttpError(400, "bad op")
+}
+
+
+// ===== Клуб =====
+type Item = { a: string; k: string; c: number; t?: string; y?: string; r?: number }
+type Listing = { id: string; uid: string; login: string; item: Item; price: number; at: number }
+type Trade = { id: string; from: string; fromLogin: string; to: string; toLogin: string; give: Item[]; want: Item[]; sa: number; at: number }
+type Fr = { f: string[]; i: string[]; o: string[] }
+const now = () => Date.now()
+const dayId = (t = now()) => new Date(t + 3 * 36e5).toISOString().slice(0, 10) // сутки по Москве
+function weekId(t = now()) {
+  const d = new Date(t), u = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())), day = u.getUTCDay() || 7
+  u.setUTCDate(u.getUTCDate() + 4 - day)
+  const y = u.getUTCFullYear(), w = Math.ceil(((+u - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7)
+  return y + "-W" + String(w).padStart(2, "0")
+}
+const newId = () => randomBytes(6).toString("hex")
+const MAX_SET = 5, BATTLES_DAY = 5, FEE = 0.1, MAX_LIST = 10
+const PARTY_TIERS: [number, number][] = [[50, 2], [150, 5], [400, 10]]
+const TOP_PRIZES: [number, string][] = [[20, "Король сета"], [12, "Второй за пультом"], [6, "Третий за пультом"]]
+
+function cleanItem(x: any): Item | null {
+  if (!x || typeof x !== "object") return null
+  const a = String(x.a || "").slice(0, 80), k = String(x.k || "").slice(0, 160), c = Math.trunc(+x.c)
+  if (!a || !k || !(c >= 0 && c <= 4)) return null
+  const it: Item = { a, k, c }
+  if (x.t) it.t = String(x.t).slice(0, 120)
+  if (x.y) it.y = String(x.y).slice(0, 12)
+  const r = Math.trunc(+x.r); if (r >= 0 && r <= 6) it.r = r
+  return it
+}
+const cleanItems = (x: any, max: number) => (Array.isArray(x) ? x : []).slice(0, max).map(cleanItem).filter(Boolean) as Item[]
+async function sendGift(uid: string, g: Record<string, unknown>) {
+  const id = newId()
+  await db().setJSON("gifts/" + uid + "/" + id, { id, sa: 0, dr: 0, at: Math.floor(now() / 1000), ...g })
+}
+async function lock(key: string) { const r = await db().setJSON("lock/" + key, { at: now() }, { onlyIfNew: true }); return !!(r && (r as any).modified !== false) }
+async function listJSON<T>(prefix: string): Promise<T[]> {
+  const { blobs } = await db().list({ prefix })
+  return ((await Promise.all(blobs.map((b) => db().get(b.key, { type: "json" })))) as T[]).filter(Boolean)
+}
+async function readFr(uid: string): Promise<Fr> {
+  const f = ((await db().get("fr/" + uid, { type: "json" })) as Fr | null) || { f: [], i: [], o: [] }
+  return { f: f.f || [], i: f.i || [], o: f.o || [] }
+}
+const without = (a: string[], x: string) => a.filter((y) => y !== x)
+async function likes7(uid: string) {
+  const d = ((await db().get("lk/" + uid, { type: "json" })) as Record<string, string> | null) || {}
+  const from = dayId(now() - 6 * 864e5)
+  return Object.values(d).filter((x) => x >= from).length
+}
+async function userOr404(login: string) {
+  const u = await getUserByLogin(String(login || ""))
+  if (!u) throw new HttpError(404, "Нет такого игрока")
+  return u
+}
+async function shelfBalance(uid: string) { const sh = (await readShelf(uid)) as any; return +(sh?.g?.sa) || 0 }
+
+// подводим итоги прошлой недели один раз: призы топу баттлов и участникам вечеринки
+async function finalizeWeek() {
+  const prev = weekId(now() - 7 * 864e5)
+  if (!(await lock("week/" + prev))) return
+  const rates = (await listJSON<any>("rate/" + prev + "/")).filter((x) => x.r > 0).sort((a, b) => b.r - a.r || b.w - a.w)
+  for (let k = 0; k < Math.min(TOP_PRIZES.length, rates.length); k++) {
+    const [dr, title] = TOP_PRIZES[k]
+    await sendGift(rates[k].uid, { dr, from: "Клуб", note: `${k + 1} место в баттлах недели ${prev}: «${title}»` })
+    await db().setJSON("title/" + rates[k].uid, { t: title, w: prev })
+  }
+  const party = await listJSON<any>("party/" + prev + "/"), total = party.reduce((s, x) => s + (+x.pw || 0), 0)
+  let prize = 0; for (const [need, dr] of PARTY_TIERS) if (total >= need) prize = dr
+  if (prize) for (const x of party) await sendGift(x.uid, { dr: prize, from: "Клуб", note: `Вечеринка недели ${prev} набрала ${Math.round(total)} силы` })
+}
+
+async function club(req: Request, path: string, method: string): Promise<Response> {
+  const m = await need(req)
+  const seg = path.slice("/api/club/".length)
+
+  if (seg === "me" && method === "GET") {
+    const fr = await readFr(m.id)
+    const names = async (ids: string[]) => (await Promise.all(ids.map(getUserById))).filter(Boolean).map((u) => (u as User).login)
+    const trades = await listJSON<Trade>("tr/")
+    const title = (await db().get("title/" + m.id, { type: "json" })) as any
+    return json(req, { login: m.name, friends: await names(fr.f), in: await names(fr.i), out: await names(fr.o), likes7: await likes7(m.id),
+      tradesIn: trades.filter((t) => t.to === m.id).length, title: title && title.w === weekId(now() - 7 * 864e5) ? title.t : "", week: weekId() })
+  }
+
+  if (seg === "players" && method === "GET") {
+    const fr = await readFr(m.id)
+    const users = await listJSON<User>("users/")
+    const out = await Promise.all(users.map(async (u) => {
+      const sh = ((await readShelf(u.id)) || {}) as any, g = sh.g || {}
+      const set = (await db().get("bset/" + u.id, { type: "json" })) as any
+      return { login: u.login, arts: (sh.b || []).length, rels: Object.keys(g.cp || {}).length, likes7: await likes7(u.id), pw: set ? set.pw : 0,
+        st: u.id === m.id ? "self" : fr.f.includes(u.id) ? "friend" : fr.o.includes(u.id) ? "out" : fr.i.includes(u.id) ? "in" : "none" }
+    }))
+    out.sort((a, b) => b.likes7 - a.likes7 || a.login.toLowerCase().localeCompare(b.login.toLowerCase()))
+    return json(req, { players: out })
+  }
+
+  let mm = /^u\/([A-Za-z0-9_.\-]{3,20})$/.exec(seg)
+  if (mm && method === "GET") {
+    const u = await userOr404(mm[1]), sh = ((await readShelf(u.id)) || {}) as any, g = sh.g || {}, fr = await readFr(m.id)
+    const lk = ((await db().get("lk/" + u.id, { type: "json" })) as Record<string, string> | null) || {}
+    const title = (await db().get("title/" + u.id, { type: "json" })) as any
+    const bd: Record<string, unknown> = {}
+    Object.entries<any>(g.dist?.b || {}).forEach(([id, b]) => { bd[id] = { cell: b.cell, lv: b.lv || 0, tgt: b.tgt || 0, bt: b.bt || 0, last: 0 } })
+    return json(req, { login: u.login, created: u.created || 0, b: sh.b || [], cp: g.cp || {}, rl: g.rl || {}, sh: g.dist?.sh || [], bd,
+      likes7: await likes7(u.id), liked: lk[m.id] === dayId(), bset: await db().get("bset/" + u.id, { type: "json" }),
+      title: title && title.w === weekId(now() - 7 * 864e5) ? title.t : "",
+      st: u.id === m.id ? "self" : fr.f.includes(u.id) ? "friend" : fr.o.includes(u.id) ? "out" : fr.i.includes(u.id) ? "in" : "none" })
+  }
+
+  if (seg === "friend" && method === "POST") {
+    const q = await body(req), u = await userOr404(q.login), act = String(q.act || "")
+    if (u.id === m.id) throw new HttpError(400, "Это ты")
+    const a = await readFr(m.id), b = await readFr(u.id)
+    if (act === "add") {
+      if (a.f.includes(u.id)) return json(req, { st: "friend" })
+      if (a.i.includes(u.id)) { a.i = without(a.i, u.id); b.o = without(b.o, m.id); a.f.push(u.id); b.f.push(m.id) }
+      else { if (!a.o.includes(u.id)) a.o.push(u.id); if (!b.i.includes(m.id)) b.i.push(m.id) }
+    } else if (act === "remove") {
+      a.f = without(a.f, u.id); a.i = without(a.i, u.id); a.o = without(a.o, u.id)
+      b.f = without(b.f, m.id); b.i = without(b.i, m.id); b.o = without(b.o, m.id)
+    } else throw new HttpError(400, "bad act")
+    await db().setJSON("fr/" + m.id, a); await db().setJSON("fr/" + u.id, b)
+    return json(req, { st: a.f.includes(u.id) ? "friend" : a.o.includes(u.id) ? "out" : "none" })
+  }
+
+  if (seg === "like" && method === "POST") {
+    const q = await body(req), u = await userOr404(q.login)
+    if (u.id === m.id) throw new HttpError(400, "Себя лайкать нельзя")
+    const d = ((await db().get("lk/" + u.id, { type: "json" })) as Record<string, string> | null) || {}
+    if (d[m.id] === dayId()) throw new HttpError(409, "Сегодня ты уже лайкал этот блок")
+    d[m.id] = dayId(); await db().setJSON("lk/" + u.id, d)
+    return json(req, { likes7: await likes7(u.id) })
+  }
+
+  // барахолка
+  if (seg === "market" && method === "GET") {
+    const L = await listJSON<Listing>("mk/"); L.sort((a, b) => b.at - a.at)
+    return json(req, { listings: L, fee: FEE })
+  }
+  if (seg === "market/list" && method === "POST") {
+    const q = await body(req), item = cleanItem(q.item), price = Math.trunc(+q.price)
+    if (!item) throw new HttpError(400, "Не та пластинка")
+    if (!(price >= 1 && price <= 1e6)) throw new HttpError(400, "Цена от 1 до 1 000 000 соуса")
+    const mine = (await listJSON<Listing>("mk/")).filter((x) => x.uid === m.id)
+    if (mine.length >= MAX_LIST) throw new HttpError(400, "На барахолке можно держать не больше " + MAX_LIST + " пластинок")
+    const L: Listing = { id: newId(), uid: m.id, login: m.name, item, price, at: now() }
+    await db().setJSON("mk/" + L.id, L)
+    return json(req, { listing: L })
+  }
+  if ((seg === "market/buy" || seg === "market/cancel") && method === "POST") {
+    const q = await body(req), id = String(q.id || "").replace(/[^0-9a-f]/g, "")
+    const L = (await db().get("mk/" + id, { type: "json" })) as Listing | null
+    if (!L) throw new HttpError(404, "Лот уже снят или продан")
+    if (seg === "market/buy") {
+      if (L.uid === m.id) throw new HttpError(400, "Это твой лот")
+      if ((await shelfBalance(m.id)) < L.price) throw new HttpError(400, "Не хватает соуса")
+    } else if (L.uid !== m.id && !m.admin) throw new HttpError(403, "Это не твой лот")
+    if (!(await lock("mk/" + id))) throw new HttpError(409, "Лот уже снят или продан")
+    await db().delete("mk/" + id)
+    const name = (L.item.t ? L.item.t + " - " : "") + L.item.a
+    if (seg === "market/buy") {
+      const fee = Math.ceil(L.price * FEE)
+      await sendGift(m.id, { sa: -L.price, rec: [L.item], from: "Барахолка", note: `покупка у ${L.login}: ${name}` })
+      await sendGift(L.uid, { sa: L.price - fee, from: "Барахолка", note: `${m.name} купил ${name} за ${L.price}, комиссия ${fee}` })
+    } else await sendGift(L.uid, { rec: [L.item], from: "Барахолка", note: `снято с продажи: ${name}` })
+    return json(req, { ok: true })
+  }
+
+  // обмен с друзьями
+  if (seg === "trades" && method === "GET") {
+    const T = (await listJSON<Trade>("tr/")).filter((t) => t.from === m.id || t.to === m.id); T.sort((a, b) => b.at - a.at)
+    return json(req, { trades: T })
+  }
+  if (seg === "trade" && method === "POST") {
+    const q = await body(req), u = await userOr404(q.to), give = cleanItems(q.give, MAX_SET), want = cleanItems(q.want, MAX_SET), sa = Math.max(0, Math.trunc(+q.sa || 0))
+    if (u.id === m.id) throw new HttpError(400, "Это ты")
+    if (!(await readFr(m.id)).f.includes(u.id)) throw new HttpError(403, "Меняться можно только с друзьями")
+    if (!give.length && !sa) throw new HttpError(400, "Предложи что-нибудь взамен")
+    if (!want.length) throw new HttpError(400, "Выбери, что хочешь получить")
+    if (sa > 1e6 || (sa && (await shelfBalance(m.id)) < sa)) throw new HttpError(400, "Не хватает соуса")
+    const t: Trade = { id: newId(), from: m.id, fromLogin: m.name, to: u.id, toLogin: u.login, give, want, sa, at: now() }
+    await db().setJSON("tr/" + t.id, t)
+    return json(req, { trade: t })
+  }
+  if ((seg === "trade/accept" || seg === "trade/cancel") && method === "POST") {
+    const q = await body(req), id = String(q.id || "").replace(/[^0-9a-f]/g, "")
+    const t = (await db().get("tr/" + id, { type: "json" })) as Trade | null
+    if (!t) throw new HttpError(404, "Обмен уже закрыт")
+    if (seg === "trade/accept" ? t.to !== m.id : t.to !== m.id && t.from !== m.id) throw new HttpError(403, "Это не твой обмен")
+    if (!(await lock("tr/" + id))) throw new HttpError(409, "Обмен уже закрыт")
+    await db().delete("tr/" + id)
+    if (seg === "trade/accept") {
+      await sendGift(t.to, { rec: t.give, sa: t.sa, from: t.fromLogin, note: "обмен состоялся" })
+      await sendGift(t.from, { rec: t.want, from: t.toLogin, note: "обмен состоялся" })
+    } else await sendGift(t.from, { rec: t.give, sa: t.sa, from: "Клуб", note: t.from === m.id ? "ты отменил обмен" : `${t.toLogin} отказался от обмена` })
+    return json(req, { ok: true })
+  }
+
+  // DJ-баттлы
+  if (seg === "set" && method === "POST") {
+    const q = await body(req), items = cleanItems(q.items, MAX_SET), pw = Math.max(0, Math.min(2000, +q.pw || 0))
+    if (items.length < MAX_SET) throw new HttpError(400, "В сете должно быть 5 пластинок")
+    const s = { uid: m.id, login: m.name, items, pw: Math.round(pw * 10) / 10, at: now() }
+    await db().setJSON("bset/" + m.id, s)
+    return json(req, { set: s })
+  }
+  if (seg === "battle" && method === "GET") {
+    await finalizeWeek()
+    const w = weekId(), sets = await listJSON<any>("bset/"), rates = await listJSON<any>("rate/" + w + "/")
+    const mr = rates.find((x) => x.uid === m.id) || { r: 0, w: 0, l: 0, day: "", n: 0 }
+    rates.sort((a, b) => b.r - a.r || b.w - a.w)
+    return json(req, { week: w, mine: sets.find((x) => x.uid === m.id) || null, opps: sets.filter((x) => x.uid !== m.id).map((x) => ({ login: x.login, pw: x.pw, items: x.items })),
+      rate: mr, left: BATTLES_DAY - (mr.day === dayId() ? mr.n : 0), top: rates.slice(0, 10).map((x) => ({ login: x.login, r: x.r, w: x.w, l: x.l })), prizes: TOP_PRIZES })
+  }
+  if (seg === "battle" && method === "POST") {
+    const q = await body(req), u = await userOr404(q.login)
+    if (u.id === m.id) throw new HttpError(400, "С собой не баттлят")
+    const a = (await db().get("bset/" + m.id, { type: "json" })) as any, b = (await db().get("bset/" + u.id, { type: "json" })) as any
+    if (!a) throw new HttpError(400, "Сначала собери свой сет")
+    if (!b) throw new HttpError(400, "У соперника нет сета")
+    const w = weekId(), key = "rate/" + w + "/" + m.id
+    const r = ((await db().get(key, { type: "json" })) as any) || { uid: m.id, login: m.name, r: 0, w: 0, l: 0, day: "", n: 0 }
+    if (r.day !== dayId()) { r.day = dayId(); r.n = 0 }
+    if (r.n >= BATTLES_DAY) throw new HttpError(429, "На сегодня баттлы кончились, приходи завтра")
+    const ra = Math.round(a.pw * (0.85 + Math.random() * 0.3) * 10) / 10, rb = Math.round(b.pw * (0.85 + Math.random() * 0.3) * 10) / 10
+    const win = ra >= rb, delta = win ? 20 + Math.max(0, Math.min(20, Math.round((b.pw - a.pw) / 10))) : -10
+    r.r = Math.max(0, r.r + delta); r.n++; if (win) r.w++; else r.l++; r.login = m.name
+    await db().setJSON(key, r)
+    return json(req, { win, me: ra, them: rb, delta, rate: r, left: BATTLES_DAY - r.n, opp: { login: u.login, items: b.items, pw: b.pw } })
+  }
+
+  // вечеринка недели
+  if (seg === "party" && method === "GET") {
+    await finalizeWeek()
+    const w = weekId(), L = await listJSON<any>("party/" + w + "/")
+    return json(req, { week: w, total: Math.round(L.reduce((s, x) => s + (+x.pw || 0), 0) * 10) / 10, list: L.map((x) => ({ login: x.login, item: x.item, pw: x.pw })),
+      mine: L.find((x) => x.uid === m.id) || null, tiers: PARTY_TIERS })
+  }
+  if (seg === "party" && method === "POST") {
+    const q = await body(req), item = cleanItem(q.item), pw = Math.max(0, Math.min(200, +q.pw || 0))
+    if (!item) throw new HttpError(400, "Не та пластинка")
+    const w = weekId(), r = await db().setJSON("party/" + w + "/" + m.id, { uid: m.id, login: m.name, item, pw: Math.round(pw * 10) / 10, at: now() }, { onlyIfNew: true })
+    if ((r as any)?.modified === false) throw new HttpError(409, "На этой неделе ты уже принёс пластинку")
+    return json(req, { ok: true })
+  }
+
+  throw new HttpError(404, "not found")
 }
 
 async function route(req: Request, path: string, ctx: Context): Promise<Response> {
@@ -210,6 +460,9 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
     await db().setJSON("gifts/" + uid + "/" + g.id, g)
     return json(req, { ok: true, gift: g })
   }
+
+  // --- клуб: профили, друзья, лайки, барахолка, обмен, баттлы, вечеринки ---
+  if (path.startsWith("/api/club/")) return await club(req, path, method)
 
   // --- загрузки ---
   if (path === "/api/upload" && method === "POST") {
