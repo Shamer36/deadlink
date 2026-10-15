@@ -30,6 +30,9 @@ input:focus{border-color:#C084FC;box-shadow:0 0 0 3px rgba(192,132,252,.2)}
 .err{min-height:22px;margin:12px 0 0;font-size:14px;color:#FDA4AF;text-align:center}
 .note{font-size:12.5px;color:var(--mute);margin:-6px 0 14px}
 [hidden]{display:none!important}
+#gbtn{display:flex;justify-content:center;min-height:44px}
+.or{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--mute);font-size:12.5px}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.gmail{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(11,7,22,.5);font-size:13.5px;color:var(--mute)}.gmail b{color:var(--ink)}
 .crow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-4px 0 12px}
 .sc{padding:9px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(167,139,250,.14);color:var(--ink);font:600 13px Manrope,sans-serif;cursor:pointer}.sc:disabled{opacity:.55;cursor:default}
 .crow .note{margin:0}
@@ -45,7 +48,9 @@ input:focus{border-color:#C084FC;box-shadow:0 0 0 3px rgba(192,132,252,.2)}
 <button type="button" role="tab" id="tIn" aria-selected="true">Вход</button>
 <button type="button" role="tab" id="tUp" aria-selected="false">Регистрация</button>
 </div>
+<div id="gw"><div id="gbtn"></div><p class="or"><span>или</span></p></div>
 <form id="f" novalidate>
+<p class="gmail" id="gm" hidden></p>
 <label for="em" id="eml">Почта или ник</label>
 <input id="em" name="email" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" inputmode="email" required>
 <div id="cw" hidden>
@@ -71,27 +76,36 @@ input:focus{border-color:#C084FC;box-shadow:0 0 0 3px rgba(192,132,252,.2)}
 </div>
 </main>
 <script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async onload="window.gInit&&gInit()" onerror="document.getElementById('gw').hidden=true"></script>
 <script>
 try{if(localStorage.getItem('dl_token')&&localStorage.getItem('dl_me'))location.replace('./')}catch(e){}
-let M='in',CD=0;const $=id=>document.getElementById(id);
+let M='in',CD=0,GT=null;const GID='412045203172ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com';const $=id=>document.getElementById(id);
 const post=(u,b)=>fetch(DL_API+u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(async r=>({ok:r.ok,j:await r.json().catch(()=>({}))}));
-function mode(m){M=m;$('tIn').setAttribute('aria-selected',m!=='up');$('tUp').setAttribute('aria-selected',m==='up');
-$('eml').textContent=m==='in'?'Почта или ник':'Почта';$('em').type=m==='in'?'text':'email';$('cw').hidden=m==='in';$('nw').hidden=m!=='up';$('rep').hidden=m==='in';
+function mode(m){M=m;$('gm').hidden=m!=='g';$('em').hidden=$('eml').hidden=m==='g';$('gw').hidden=m==='g';$('tIn').setAttribute('aria-selected',m!=='up'&&m!=='g');$('tUp').setAttribute('aria-selected',m==='up'||m==='g');
+$('eml').textContent=m==='in'?'Почта или ник':'Почта';$('em').type=m==='in'?'text':'email';$('cw').hidden=m==='in'||m==='g';$('nw').hidden=m!=='up'&&m!=='g';$('rep').hidden=m==='in';
 $('pwl').textContent=m==='reset'?'Новый пароль':'Пароль';$('pw').autocomplete=m==='in'?'current-password':'new-password';
-$('go').textContent=m==='in'?'Войти':m==='up'?'Создать аккаунт':'Сменить пароль и войти';$('fg').textContent=m==='reset'?'← Назад ко входу':'Забыл пароль';$('fg').hidden=m==='up';$('err').textContent='';$('cn').textContent=''}
-$('tIn').onclick=()=>mode('in');$('tUp').onclick=()=>mode('up');$('fg').onclick=()=>mode(M==='reset'?'in':'reset');
+$('go').textContent=m==='in'?'Войти':m==='up'||m==='g'?'Создать аккаунт':'Сменить пароль и войти';$('fg').textContent=m==='reset'||m==='g'?'← Назад ко входу':'Забыл пароль';$('fg').hidden=m==='up';$('err').textContent='';$('cn').textContent=''}
+$('tIn').onclick=()=>mode('in');$('tUp').onclick=()=>mode('up');$('fg').onclick=()=>mode(M==='reset'||M==='g'?'in':'reset');
 function tick(){const l=Math.ceil((CD-Date.now())/1000);$('sc').disabled=l>0;$('sc').textContent=l>0?`Отправить ещё раз через ${l} с`:'Отправить код на почту';if(l>0)setTimeout(tick,1000)}
 $('sc').onclick=async()=>{const email=$('em').value.trim(),er=$('err');er.textContent='';if(!/^\S+@\S+\.\S+$/.test(email)){er.textContent='Впиши почту';return}
 $('sc').disabled=true;try{const{ok,j}=await post('/api/auth/code',{email,p:M==='up'?'reg':'reset'});if(ok){$('cn').textContent='Код отправлен. Проверь и папку «Спам».';CD=Date.now()+60000;tick();$('code').focus()}else{er.textContent=j.error||'Не получилось отправить код';$('sc').disabled=false}}catch(x){er.textContent='Сервер не отвечает';$('sc').disabled=false}};
 function done(j){try{localStorage.setItem('dl_token',j.token);localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(e){$('err').textContent='Браузер не даёт сохранить вход (приватный режим?)';return false}location.replace('./');return true}
 $('f').onsubmit=async e=>{e.preventDefault();const email=$('em').value.trim(),password=$('pw').value,er=$('err'),code=$('code').value.replace(/\D/g,'');er.textContent='';
-if(!email||!password){er.textContent=M==='in'?'Введи почту и пароль':'Заполни все поля';return}
-if(M!=='in'){if(code.length!==6){er.textContent='Введи 6 цифр из письма';return}if(password.length<6){er.textContent='Пароль должен быть не короче 6 символов';return}if(password!==$('pw2').value){er.textContent='Пароли не совпадают';return}}
-if(M==='up'&&!/^[A-Za-z0-9_.\-]{3,20}$/.test($('nick').value.trim())){er.textContent='Ник: от 3 до 20 символов, латиница, цифры, _ . -';return}
+if(M==='g'){if(password.length<6){er.textContent='Пароль должен быть не короче 6 символов';return}if(password!==$('pw2').value){er.textContent='Пароли не совпадают';return}}
+else{if(!email||!password){er.textContent=M==='in'?'Введи почту и пароль':'Заполни все поля';return}
+if(M!=='in'&&M!=='g'){if(code.length!==6){er.textContent='Введи 6 цифр из письма';return}if(password.length<6){er.textContent='Пароль должен быть не короче 6 символов';return}if(password!==$('pw2').value){er.textContent='Пароли не совпадают';return}}
+}if((M==='up'||M==='g')&&!/^[A-Za-z0-9_.\-]{3,20}$/.test($('nick').value.trim())){er.textContent='Ник: от 3 до 20 символов, латиница, цифры, _ . -';return}
 $('go').disabled=true;
-try{const{ok,j}=M==='in'?await post('/api/login',{login:email,password}):M==='up'?await post('/api/register',{email,code,login:$('nick').value.trim(),password}):await post('/api/auth/reset',{email,code,password});
+try{const{ok,j}=M==='g'?await post('/api/auth/google/finish',{ticket:GT,login:$('nick').value.trim(),password}):M==='in'?await post('/api/login',{login:email,password}):M==='up'?await post('/api/register',{email,code,login:$('nick').value.trim(),password}):await post('/api/auth/reset',{email,code,password});
 if(ok&&j.token){if(done(j))return}else er.textContent=j.error||'Что-то пошло не так'}catch(x){er.textContent='Сервер не отвечает. Проверь интернет и попробуй ещё раз.'}
 $('go').disabled=false};
+window.onGoogle=async function(res){const er=$('err');er.textContent='Проверяю вход через Google…';
+try{const{ok,j}=await post('/api/auth/google',{credential:res.credential});if(ok&&j.token){done(j);return}
+if(ok&&j.need==='signup'){GT=j.ticket;mode('g');$('gm').innerHTML='Почта из Google: <b></b><br>Придумай ник и пароль. Пароль нужен, чтобы входить и без Google, по почте.';$('gm').querySelector('b').textContent=j.email;$('nick').focus();return}
+er.textContent=j.error||'Не получилось войти через Google'}catch(x){er.textContent='Сервер не отвечает'}};
+function gInit(){try{google.accounts.id.initialize({client_id:GID,callback:onGoogle,ux_mode:'popup',auto_select:false});
+google.accounts.id.renderButton($('gbtn'),{theme:'filled_black',size:'large',shape:'pill',text:'continue_with',logo_alignment:'center',width:Math.min(356,$('gbtn').clientWidth||320),locale:'ru'})}catch(e){$('gw').hidden=true}}
+if(window.google&&google.accounts)gInit();
 </script>
 </body>
 </html>

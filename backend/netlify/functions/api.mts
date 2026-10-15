@@ -17,7 +17,7 @@ const MEDIA_TYPES: Record<string, string> = {
 const db = () => getStore({ name: "deadlink", consistency: "strong" })
 const media = () => getStore({ name: "deadlink-media", consistency: "strong" })
 
-type User = { id: string; login: string; salt: string; hash: string; admin?: boolean; created?: number; email?: string }
+type User = { id: string; login: string; salt: string; hash: string; admin?: boolean; created?: number; email?: string; gsub?: string }
 type Me = { id: string; name: string; admin: boolean; email: string }
 
 class HttpError extends Error { constructor(public status: number, msg: string) { super(msg) } }
@@ -340,7 +340,20 @@ async function club(req: Request, path: string, method: string): Promise<Respons
 // ===== Почта и коды =====
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/
 const normEmail = (e: unknown) => String(e || "").trim().toLowerCase()
-const pub = (u: User) => ({ id: u.id, name: u.login, admin: !!u.admin, email: u.email || "" })
+const pub = (u: User) => ({ id: u.id, name: u.login, admin: !!u.admin, email: u.email || "", google: !!u.gsub })
+const GOOGLE_CLIENT = "412045203172ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com"
+// проверяем Google ID-токен у самого Google; возвращаем подтверждённую почту и id аккаунта
+async function googleIdentity(cred: string): Promise<{ email: string; sub: string }> {
+  const dev = Netlify.env.get("DEV_GOOGLE") && !Netlify.env.get("SITE_ID") && /^dev:([^:]+):(\w+)$/.exec(cred)
+  if (dev) return { email: normEmail(dev[1]), sub: dev[2] }
+  if (!cred || cred.length > 4096) throw new HttpError(400, "Нет ответа от Google")
+  const r = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(cred)).catch(() => { throw new HttpError(502, "Не получилось связаться с Google, попробуй ещё раз") })
+  const t = (await r.json().catch(() => ({}))) as any
+  const aud = Netlify.env.get("GOOGLE_CLIENT_ID") || GOOGLE_CLIENT
+  if (!r.ok || t.aud !== aud || !["accounts.google.com", "https://accounts.google.com"].includes(t.iss) || +t.exp * 1000 < Date.now()) throw new HttpError(401, "Google не подтвердил вход, попробуй ещё раз")
+  if (String(t.email_verified) !== "true" || !t.email) throw new HttpError(400, "У этого Google-аккаунта не подтверждена почта")
+  return { email: normEmail(t.email), sub: String(t.sub) }
+}
 const codeHash = (email: string, code: string) => createHash("sha256").update(email + ":" + code).digest("hex")
 async function getUserByEmail(email: string) {
   const lo = await db().get("emails/" + email, { type: "text" })
@@ -393,6 +406,34 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
     if (p === "reset" && !owner) { await sleep(400); return json(req, { ok: true }) } // не выдаём, есть ли такая почта
     await issueCode(email, p)
     return json(req, { ok: true })
+  }
+
+  if (path === "/api/auth/google" && method === "POST") {
+    const q = await body(req), g = await googleIdentity(String(q.credential || ""))
+    const bySub = await db().get("gsub/" + g.sub, { type: "text" })
+    let u = bySub ? await getUserByLogin(bySub) : await getUserByEmail(g.email)
+    if (u) {
+      if (!u.gsub) { u.gsub = g.sub; await db().setJSON("users/" + u.login.toLowerCase(), u); await db().set("gsub/" + g.sub, u.login.toLowerCase()) }
+      return json(req, { ok: true, token: await newSession(u.id), user: pub(u) })
+    }
+    const ticket = randomBytes(24).toString("base64url")
+    await db().setJSON("gtk/" + ticket, { email: g.email, sub: g.sub, exp: Date.now() + 30 * 60e3 })
+    return json(req, { need: "signup", ticket, email: g.email })
+  }
+  if (path === "/api/auth/google/finish" && method === "POST") {
+    const q = await body(req), ticket = String(q.ticket || "").replace(/[^A-Za-z0-9_\-]/g, "")
+    const t = (await db().get("gtk/" + ticket, { type: "json" })) as any
+    if (!t || t.exp < Date.now()) throw new HttpError(400, "Вход через Google устарел, нажми кнопку Google ещё раз")
+    const login = String(q.login || "").trim(), pw = String(q.password || "")
+    if (!LOGIN_RE.test(login)) throw new HttpError(400, "Ник: от 3 до 20 символов, латиница, цифры, _ . -")
+    if (pw.length < 6) throw new HttpError(400, "Пароль должен быть не короче 6 символов")
+    if (await getUserByEmail(t.email)) throw new HttpError(409, "Эта почта уже зарегистрирована, войди через Google ещё раз")
+    const id = randomBytes(6).toString("hex"), key = login.toLowerCase()
+    const u: User = { id, login, ...pwHash(pw), admin: false, created: Math.floor(Date.now() / 1000), email: t.email, gsub: t.sub }
+    const r = await db().setJSON("users/" + key, u, { onlyIfNew: true })
+    if (!r.modified) throw new HttpError(409, "Такой ник уже занят")
+    await db().set("uids/" + id, key); await db().set("emails/" + t.email, key); await db().set("gsub/" + t.sub, key); await db().delete("gtk/" + ticket)
+    return json(req, { ok: true, token: await newSession(id), user: pub(u) })
   }
 
   if (path === "/api/register" && method === "POST") {
