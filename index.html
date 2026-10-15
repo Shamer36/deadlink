@@ -672,6 +672,9 @@ body{position:relative}
 .crw{animation:crwF 3s ease-in-out infinite}@keyframes crwF{50%{transform:translateY(-3px)}}
 @keyframes amIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:none}}
 .amenu[hidden]{display:none}
+.aeml{display:block;color:var(--mute);font-size:11.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aem .s2{background:rgba(167,139,250,.16)!important;box-shadow:none!important}
+.am.ok{color:#86efac}
 .ahead{display:flex;align-items:center;gap:12px;padding:10px 10px 14px}
 .ahead .av{width:46px;height:46px;font-size:19px;flex:none}
 .ahead b{display:block;font:700 15px Unbounded,sans-serif;letter-spacing:-.01em;word-break:break-all}
@@ -859,15 +862,24 @@ const el=document.createElement('div');el.className='acct';el.style.setProperty(
 const KEY='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3m-3 3 2 2m-5 1 2 2"/></svg>',
 OUT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>',
 GIFT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>',
+MAIL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
 CR='<svg viewBox="0 0 24 24" fill="#1c1205"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>';
 el.innerHTML=`<button class="abtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Аккаунт ${e(M.name)}"><span class="av">${ini}</span>${M.admin?`<span class="crown">${CR}</span>`:''}</button>
-<div class="amenu" role="menu" hidden><div class="ahead"><span class="av">${ini}</span><div><b>${e(M.name)}</b><small class="${M.admin?'adm':''}">${M.admin?'администратор':'игрок'}</small></div></div><div class="asep"></div>
-${M.admin?`<button class="aitem" type="button" data-a="gift">${GIFT}Выдать / достроить</button>`:''}<button class="aitem" type="button" data-a="pw">${KEY}Сменить пароль</button><div class="apw" hidden></div>
+<div class="amenu" role="menu" hidden><div class="ahead"><span class="av">${ini}</span><div><b>${e(M.name)}</b><small class="${M.admin?'adm':''}">${M.admin?'администратор':'игрок'}</small><small class="aeml">${M.email?e(M.email):'почта не привязана'}</small></div></div><div class="asep"></div>
+${M.admin?`<button class="aitem" type="button" data-a="gift">${GIFT}Выдать / достроить</button>`:''}<button class="aitem" type="button" data-a="em">${MAIL}${M.email?'Сменить почту':'Привязать почту'}</button><div class="apw aem" hidden></div><button class="aitem" type="button" data-a="pw">${KEY}Сменить пароль</button><div class="apw apw0" hidden></div>
 <button class="aitem out" type="button" data-a="out">${OUT}Выйти</button></div>`;
-const btn=el.querySelector('.abtn'),menu=el.querySelector('.amenu'),pw=el.querySelector('.apw');
-const open=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',v);if(!v){pw.hidden=true;pw.innerHTML=''}};
+const btn=el.querySelector('.abtn'),menu=el.querySelector('.amenu'),pw=el.querySelector('.apw0'),emp=el.querySelector('.aem');
+const open=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',v);if(!v){pw.hidden=true;pw.innerHTML='';emp.hidden=true;emp.innerHTML=''}};
+const emForm=(hint)=>{emp.hidden=false;emp.innerHTML=`${hint?`<p class="am">${hint}</p>`:''}<input type="email" name="e" placeholder="Почта" autocomplete="email" value="${e(M.email||'')}"><button class="go s2" type="button" data-s>Отправить код</button><input name="c" inputmode="numeric" maxlength="6" placeholder="Код из письма" autocomplete="one-time-code"><button class="go" type="button" data-ok>Подтвердить</button><p class="am"></p>`;
+const m=emp.querySelector('p.am:last-child'),EM=()=>emp.querySelector('[name=e]').value.trim(),J={'Content-Type':'application/json'};emp.querySelector('[name=e]').focus();
+emp.querySelector('[data-s]').onclick=async ev=>{const b=ev.currentTarget;m.className='am';m.textContent='Отправляю…';b.disabled=true;const r=await DLF('/api/auth/code',{method:'POST',headers:J,body:JSON.stringify({email:EM(),p:'link'})}).catch(()=>null);const j=r?await r.json().catch(()=>({})):{};
+if(r&&r.ok){m.className='am ok';m.textContent='Код отправлен, проверь почту и «Спам».';setTimeout(()=>b.disabled=false,60000)}else{m.className='am bad';m.textContent=j.error||'Сервер не отвечает';b.disabled=false}};
+emp.querySelector('[data-ok]').onclick=async()=>{m.className='am';m.textContent='Проверяю…';const r=await DLF('/api/auth/email',{method:'POST',headers:J,body:JSON.stringify({email:EM(),code:emp.querySelector('[name=c]').value})}).catch(()=>null);const j=r?await r.json().catch(()=>({})):{};
+if(r&&r.ok){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(_){}m.className='am ok';m.textContent='Готово! Теперь входи по почте.';setTimeout(()=>location.reload(),1200)}else{m.className='am bad';m.textContent=j.error||'Сервер не отвечает'}}};
 btn.onclick=ev=>{ev.stopPropagation();open(menu.hidden)};
 document.addEventListener('click',ev=>{if(!el.contains(ev.target))open(false)});document.addEventListener('keydown',ev=>{if(ev.key==='Escape')open(false)});
+el.querySelector('[data-a=em]').onclick=()=>{if(!emp.hidden){emp.hidden=true;emp.innerHTML='';return}emForm('')};
+if(!M.email){try{if(!sessionStorage.getItem('dl_emq')){setTimeout(()=>{try{sessionStorage.setItem('dl_emq','1')}catch(_){}open(true);emForm('Привяжи почту: теперь вход идёт по ней, и через неё можно восстановить пароль. Ник и прогресс останутся.')},1800)}}catch(_){}}
 const gb=el.querySelector('[data-a=gift]');if(gb)gb.onclick=()=>{open(false);giftModal()};
 el.querySelector('[data-a=out]').onclick=async()=>{await DLF('/api/logout',{method:'POST'}).catch(()=>{});DL_LOGOUT()};
 el.querySelector('[data-a=pw]').onclick=()=>{if(!pw.hidden){pw.hidden=true;pw.innerHTML='';return}pw.hidden=false;

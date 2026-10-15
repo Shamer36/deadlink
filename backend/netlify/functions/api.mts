@@ -2,7 +2,8 @@
 // Сайт живёт на GitHub Pages, сюда ходит только за данными.
 import { getStore } from "@netlify/blobs"
 import type { Config, Context } from "@netlify/functions"
-import { pbkdf2Sync, randomBytes, timingSafeEqual, randomUUID } from "node:crypto"
+import { pbkdf2Sync, randomBytes, timingSafeEqual, randomUUID, createHash, randomInt } from "node:crypto"
+import nodemailer from "nodemailer"
 
 const ORIGINS = ["https://shamer36.github.io", "http://localhost:8765", "http://127.0.0.1:8765"]
 const COLS = ["places", "artists", "releases", "links", "groups", "edits", "config"]
@@ -16,8 +17,8 @@ const MEDIA_TYPES: Record<string, string> = {
 const db = () => getStore({ name: "deadlink", consistency: "strong" })
 const media = () => getStore({ name: "deadlink-media", consistency: "strong" })
 
-type User = { id: string; login: string; salt: string; hash: string; admin?: boolean; created?: number }
-type Me = { id: string; name: string; admin: boolean }
+type User = { id: string; login: string; salt: string; hash: string; admin?: boolean; created?: number; email?: string }
+type Me = { id: string; name: string; admin: boolean; email: string }
 
 class HttpError extends Error { constructor(public status: number, msg: string) { super(msg) } }
 
@@ -59,7 +60,7 @@ async function me(req: Request): Promise<Me | null> {
   const s = (await db().get("sess/" + t, { type: "json" })) as { uid: string; exp: number } | null
   if (!s || s.exp < Date.now()) return null
   const u = await getUserById(s.uid)
-  return u ? { id: u.id, name: u.login, admin: !!u.admin } : null
+  return u ? { id: u.id, name: u.login, admin: !!u.admin, email: u.email || "" } : null
 }
 async function need(req: Request, admin = false) {
   const m = await me(req)
@@ -335,6 +336,46 @@ async function club(req: Request, path: string, method: string): Promise<Respons
   throw new HttpError(404, "not found")
 }
 
+
+// ===== Почта и коды =====
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/
+const normEmail = (e: unknown) => String(e || "").trim().toLowerCase()
+const pub = (u: User) => ({ id: u.id, name: u.login, admin: !!u.admin, email: u.email || "" })
+const codeHash = (email: string, code: string) => createHash("sha256").update(email + ":" + code).digest("hex")
+async function getUserByEmail(email: string) {
+  const lo = await db().get("emails/" + email, { type: "text" })
+  return lo ? getUserByLogin(lo) : null
+}
+async function sendMail(to: string, subject: string, text: string) {
+  const user = Netlify.env.get("GMAIL_USER"), pass = Netlify.env.get("GMAIL_APP_PASSWORD")
+  if (!user || !pass) {
+    if (Netlify.env.get("DEV_MAIL_LOG")) { console.log("MAIL to " + to + ": " + text); return }
+    throw new HttpError(503, "Отправка писем ещё не настроена")
+  }
+  const t = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass: pass.replace(/\s+/g, "") } })
+  await t.sendMail({ from: `"Deadlink" <${user}>`, to, subject, text })
+}
+// purpose: reg — регистрация, reset — новый пароль, link — добавить почту к аккаунту
+async function issueCode(email: string, p: string) {
+  const k = "codes/" + email, now = Date.now()
+  const old = (await db().get(k, { type: "json" })) as any
+  const hw = old && now - old.hw < 36e5 ? old.hw : now, n = old && hw === old.hw ? old.n : 0
+  if (old && now - old.sent < 60e3) throw new HttpError(429, "Код уже отправлен. Новый можно запросить через минуту.")
+  if (n >= 6) throw new HttpError(429, "Слишком много кодов за час. Попробуй позже.")
+  const code = String(randomInt(0, 1e6)).padStart(6, "0")
+  await db().setJSON(k, { h: codeHash(email, code), p, exp: now + 15 * 60e3, tries: 0, sent: now, hw, n: n + 1 })
+  const what = p === "reg" ? "регистрации" : p === "reset" ? "смены пароля" : "подтверждения почты"
+  await sendMail(email, `Deadlink: код ${code}`, `Твой код для ${what} на Deadlink: ${code}\n\nОн действует 15 минут. Если ты ничего не запрашивал, просто удали это письмо.\n\nhttps://shamer36.github.io/deadlink/`)
+}
+async function useCode(email: string, p: string, code: string) {
+  const k = "codes/" + email, c = (await db().get(k, { type: "json" })) as any
+  if (!c || c.p !== p || c.exp < Date.now()) throw new HttpError(400, "Код устарел. Запроси новый.")
+  if (c.tries >= 5) throw new HttpError(429, "Слишком много неверных попыток. Запроси новый код.")
+  const a = Buffer.from(c.h, "hex"), b = Buffer.from(codeHash(email, String(code || "").replace(/\D/g, "")), "hex")
+  if (a.length !== b.length || !timingSafeEqual(a, b)) { c.tries++; await db().setJSON(k, c); await sleep(500); throw new HttpError(400, "Неверный код") }
+  await db().delete(k)
+}
+
 async function route(req: Request, path: string, ctx: Context): Promise<Response> {
   const method = req.method
   if (method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) })
@@ -342,31 +383,71 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
   // --- аккаунты ---
   if (path === "/api/me" && method === "GET") return json(req, { user: await me(req) })
 
-  if ((path === "/api/register" || path === "/api/login") && method === "POST") {
-    const q = await body(req)
-    const login = String(q.login || "").trim(), pw = String(q.password || "")
-    const key = login.toLowerCase()
-    if (path === "/api/register") {
-      if (!LOGIN_RE.test(login)) throw new HttpError(400, "Логин: от 3 до 20 символов, латиница, цифры, _ . -")
-      if (pw.length < 6) throw new HttpError(400, "Пароль должен быть не короче 6 символов")
-      const id = randomBytes(6).toString("hex")
-      const u: User = { id, login, ...pwHash(pw), admin: false, created: Math.floor(Date.now() / 1000) }
-      const r = await db().setJSON("users/" + key, u, { onlyIfNew: true })
-      if (!r.modified) throw new HttpError(409, "Такой логин уже занят")
-      await db().set("uids/" + id, key)
-      return json(req, { ok: true, token: await newSession(id), user: { id, name: login, admin: false } })
-    }
+  if (path === "/api/auth/code" && method === "POST") {
+    const q = await body(req), email = normEmail(q.email), p = String(q.p || "")
+    if (!EMAIL_RE.test(email)) throw new HttpError(400, "Проверь адрес почты")
+    if (!["reg", "reset", "link"].includes(p)) throw new HttpError(400, "bad purpose")
+    const owner = await getUserByEmail(email)
+    if (p === "link") { const m = await need(req); if (owner && owner.id !== m.id) throw new HttpError(409, "Эта почта уже привязана к другому аккаунту") }
+    if (p === "reg" && owner) throw new HttpError(409, "Эта почта уже зарегистрирована. Войди или восстанови пароль.")
+    if (p === "reset" && !owner) { await sleep(400); return json(req, { ok: true }) } // не выдаём, есть ли такая почта
+    await issueCode(email, p)
+    return json(req, { ok: true })
+  }
+
+  if (path === "/api/register" && method === "POST") {
+    const q = await body(req), email = normEmail(q.email), login = String(q.login || "").trim(), pw = String(q.password || "")
+    if (!EMAIL_RE.test(email)) throw new HttpError(400, "Проверь адрес почты")
+    if (!LOGIN_RE.test(login)) throw new HttpError(400, "Ник: от 3 до 20 символов, латиница, цифры, _ . -")
+    if (pw.length < 6) throw new HttpError(400, "Пароль должен быть не короче 6 символов")
+    if (await getUserByEmail(email)) throw new HttpError(409, "Эта почта уже зарегистрирована")
+    if (await getUserByLogin(login)) throw new HttpError(409, "Такой ник уже занят")
+    await useCode(email, "reg", q.code)
+    const id = randomBytes(6).toString("hex"), key = login.toLowerCase()
+    const u: User = { id, login, ...pwHash(pw), admin: false, created: Math.floor(Date.now() / 1000), email }
+    const r = await db().setJSON("users/" + key, u, { onlyIfNew: true })
+    if (!r.modified) throw new HttpError(409, "Такой ник уже занят")
+    await db().set("uids/" + id, key); await db().set("emails/" + email, key)
+    return json(req, { ok: true, token: await newSession(id), user: pub(u) })
+  }
+
+  if (path === "/api/login" && method === "POST") {
+    const q = await body(req), ident = String(q.login || q.email || "").trim(), pw = String(q.password || "")
+    const key = ident.toLowerCase()
     const f = ((await db().get("fails/" + key, { type: "json" })) as [number, number]) || [0, 0]
     if (f[1] > Date.now()) throw new HttpError(429, "Слишком много попыток. Подожди пару минут.")
-    const u = await getUserByLogin(login)
+    const u = ident.includes("@") ? await getUserByEmail(normEmail(ident)) : await getUserByLogin(ident)
     if (!u || !pwOk(pw, u)) {
       f[0] += 1
       await db().setJSON("fails/" + key, f[0] >= 8 ? [0, Date.now() + 300000] : f)
       await sleep(700)
-      throw new HttpError(401, "Неверный логин или пароль")
+      throw new HttpError(401, "Неверная почта или пароль")
     }
     await db().delete("fails/" + key)
-    return json(req, { ok: true, token: await newSession(u.id), user: { id: u.id, name: u.login, admin: !!u.admin } })
+    return json(req, { ok: true, token: await newSession(u.id), user: pub(u) })
+  }
+
+  if (path === "/api/auth/reset" && method === "POST") {
+    const q = await body(req), email = normEmail(q.email), pw = String(q.password || "")
+    if (pw.length < 6) throw new HttpError(400, "Пароль должен быть не короче 6 символов")
+    const u = await getUserByEmail(email)
+    if (!u) throw new HttpError(400, "Неверный код")
+    await useCode(email, "reset", q.code)
+    Object.assign(u, pwHash(pw)); await db().setJSON("users/" + u.login.toLowerCase(), u)
+    await db().delete("fails/" + email); await db().delete("fails/" + u.login.toLowerCase())
+    return json(req, { ok: true, token: await newSession(u.id), user: pub(u) })
+  }
+
+  if (path === "/api/auth/email" && method === "POST") {
+    const m = await need(req), q = await body(req), email = normEmail(q.email)
+    if (!EMAIL_RE.test(email)) throw new HttpError(400, "Проверь адрес почты")
+    const owner = await getUserByEmail(email)
+    if (owner && owner.id !== m.id) throw new HttpError(409, "Эта почта уже привязана к другому аккаунту")
+    await useCode(email, "link", q.code)
+    const u = (await getUserById(m.id))!, key = u.login.toLowerCase()
+    if (u.email && u.email !== email) await db().delete("emails/" + u.email)
+    u.email = email; await db().setJSON("users/" + key, u); await db().set("emails/" + email, key)
+    return json(req, { ok: true, user: pub(u) })
   }
 
   if (path === "/api/logout" && method === "POST") {
@@ -442,7 +523,7 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
       const sh = ((await readShelf(u.id)) || {}) as any, g = sh.g || {}
       const { blobs: gb } = await db().list({ prefix: "gifts/" + u.id + "/" })
       const pend = (await Promise.all(gb.map((x) => db().get(x.key, { type: "json" })))) as any[]
-      return { id: u.id, login: u.login, admin: !!u.admin, created: u.created || 0, sa: g.sa ?? null, dr: g.dr ?? null,
+      return { id: u.id, login: u.login, email: u.email || "", admin: !!u.admin, created: u.created || 0, sa: g.sa ?? null, dr: g.dr ?? null,
         pending: [pend.reduce((s, x) => s + (+x?.sa || 0), 0), pend.reduce((s, x) => s + (+x?.dr || 0), 0)] }
     }))
     users.sort((a, b) => a.login.toLowerCase().localeCompare(b.login.toLowerCase()))

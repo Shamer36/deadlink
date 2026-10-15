@@ -3,9 +3,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@netlify/blobs": "^11.1.4"
+    "@netlify/blobs": "^11.1.4",
+    "nodemailer": "^6.10.1"
   },
   "devDependencies": {
-    "@netlify/functions": "^2.8.2"
+    "@netlify/functions": "^2.8.2",
+    "@types/nodemailer": "^8.0.2"
   }
 }
