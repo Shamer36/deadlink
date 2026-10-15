@@ -17,8 +17,8 @@ const MEDIA_TYPES: Record<string, string> = {
 const db = () => getStore({ name: "deadlink", consistency: "strong" })
 const media = () => getStore({ name: "deadlink-media", consistency: "strong" })
 
-type User = { id: string; login: string; salt: string; hash: string; admin?: boolean; created?: number; email?: string; gsub?: string }
-type Me = { id: string; name: string; admin: boolean; email: string }
+type User = { id: string; login: string; salt: string; hash: string; admin?: boolean; created?: number; email?: string; gsub?: string; av?: string }
+type Me = { id: string; name: string; admin: boolean; email: string; av: string }
 
 class HttpError extends Error { constructor(public status: number, msg: string) { super(msg) } }
 
@@ -60,7 +60,7 @@ async function me(req: Request): Promise<Me | null> {
   const s = (await db().get("sess/" + t, { type: "json" })) as { uid: string; exp: number } | null
   if (!s || s.exp < Date.now()) return null
   const u = await getUserById(s.uid)
-  return u ? { id: u.id, name: u.login, admin: !!u.admin, email: u.email || "" } : null
+  return u ? { id: u.id, name: u.login, admin: !!u.admin, email: u.email || "", av: u.av || "" } : null
 }
 async function need(req: Request, admin = false) {
   const m = await me(req)
@@ -176,7 +176,7 @@ async function club(req: Request, path: string, method: string): Promise<Respons
     const out = await Promise.all(users.map(async (u) => {
       const sh = ((await readShelf(u.id)) || {}) as any, g = sh.g || {}
       const set = (await db().get("bset/" + u.id, { type: "json" })) as any
-      return { login: u.login, arts: (sh.b || []).length, rels: Object.keys(g.cp || {}).length, likes7: await likes7(u.id), pw: set ? set.pw : 0,
+      return { login: u.login, av: u.av || "", arts: (sh.b || []).length, rels: Object.keys(g.cp || {}).length, likes7: await likes7(u.id), pw: set ? set.pw : 0,
         st: u.id === m.id ? "self" : fr.f.includes(u.id) ? "friend" : fr.o.includes(u.id) ? "out" : fr.i.includes(u.id) ? "in" : "none" }
     }))
     out.sort((a, b) => b.likes7 - a.likes7 || a.login.toLowerCase().localeCompare(b.login.toLowerCase()))
@@ -190,7 +190,7 @@ async function club(req: Request, path: string, method: string): Promise<Respons
     const title = (await db().get("title/" + u.id, { type: "json" })) as any
     const bd: Record<string, unknown> = {}
     Object.entries<any>(g.dist?.b || {}).forEach(([id, b]) => { bd[id] = { cell: b.cell, lv: b.lv || 0, tgt: b.tgt || 0, bt: b.bt || 0, last: 0 } })
-    return json(req, { login: u.login, created: u.created || 0, b: sh.b || [], cp: g.cp || {}, rl: g.rl || {}, sh: g.dist?.sh || [], bd,
+    return json(req, { login: u.login, av: u.av || "", created: u.created || 0, b: sh.b || [], cp: g.cp || {}, rl: g.rl || {}, sh: g.dist?.sh || [], bd,
       likes7: await likes7(u.id), liked: lk[m.id] === dayId(), bset: await db().get("bset/" + u.id, { type: "json" }),
       title: title && title.w === weekId(now() - 7 * 864e5) ? title.t : "",
       st: u.id === m.id ? "self" : fr.f.includes(u.id) ? "friend" : fr.o.includes(u.id) ? "out" : fr.i.includes(u.id) ? "in" : "none" })
@@ -340,7 +340,7 @@ async function club(req: Request, path: string, method: string): Promise<Respons
 // ===== Почта и коды =====
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/
 const normEmail = (e: unknown) => String(e || "").trim().toLowerCase()
-const pub = (u: User) => ({ id: u.id, name: u.login, admin: !!u.admin, email: u.email || "", google: !!u.gsub })
+const pub = (u: User) => ({ id: u.id, name: u.login, admin: !!u.admin, email: u.email || "", google: !!u.gsub, av: u.av || "" })
 const GOOGLE_CLIENT = "412045203172-ce9m7pqasn5fs4trfssovqicdhot7q5n.apps.googleusercontent.com"
 // проверяем Google ID-токен у самого Google; возвращаем подтверждённую почту и id аккаунта
 async function googleIdentity(cred: string): Promise<{ email: string; sub: string }> {
@@ -491,19 +491,17 @@ async function route(req: Request, path: string, ctx: Context): Promise<Response
     return json(req, { ok: true, user: pub(u) })
   }
 
-  if (path === "/api/logout" && method === "POST") {
-    const t = token(req); if (t) await db().delete("sess/" + t)
-    return json(req, { ok: true })
+  if (path === "/api/avatar" && method === "POST") {
+    const m = await need(req), q = await body(req), d = String(q.data || "")
+    if (d && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 80000)) throw new HttpError(400, "Картинка не подошла, попробуй другую")
+    const u = (await getUserById(m.id))!
+    if (d) u.av = d; else delete u.av
+    await db().setJSON("users/" + u.login.toLowerCase(), u)
+    return json(req, { ok: true, user: pub(u) })
   }
 
-  if (path === "/api/password" && method === "POST") {
-    const m = await need(req), q = await body(req)
-    const u = (await getUserById(m.id))!
-    if (!pwOk(String(q.old || ""), u)) { await sleep(700); throw new HttpError(401, "Старый пароль неверный") }
-    const nw = String(q.new || "")
-    if (nw.length < 6) throw new HttpError(400, "Новый пароль должен быть не короче 6 символов")
-    Object.assign(u, pwHash(nw))
-    await db().setJSON("users/" + u.login.toLowerCase(), u)
+  if (path === "/api/logout" && method === "POST") {
+    const t = token(req); if (t) await db().delete("sess/" + t)
     return json(req, { ok: true })
   }
 

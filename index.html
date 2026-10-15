@@ -675,6 +675,9 @@ body{position:relative}
 .aeml{display:block;color:var(--mute);font-size:11.5px;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aem .s2{background:rgba(167,139,250,.16)!important;box-shadow:none!important}
 .am.ok{color:#86efac}
+.apw[hidden]{display:none}
+.av{overflow:hidden}.av img{width:100%;height:100%;object-fit:cover;display:block}
+.alnk{background:none;border:0;color:var(--mute);font:500 12.5px Manrope,sans-serif;text-decoration:underline;cursor:pointer;padding:2px}
 .ahead{display:flex;align-items:center;gap:12px;padding:10px 10px 14px}
 .ahead .av{width:46px;height:46px;font-size:19px;flex:none}
 .ahead b{display:block;font:700 15px Unbounded,sans-serif;letter-spacing:-.01em;word-break:break-all}
@@ -785,6 +788,7 @@ body>.gmod{max-width:none!important;width:auto!important;grid-column:auto!import
 .cpar{position:relative;height:14px;border-radius:7px;background:rgba(11,7,22,.6);border:1px solid var(--line);margin:22px 0 14px}.cpar>i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,#a855f7,#f0abfc)}
 .cpar span{position:absolute;top:-20px;transform:translateX(-100%);font-size:11.5px;color:var(--mute)}.cpar span.on{color:#86efac}
 .cby{color:var(--mute);font-size:12px}
+.cpn{display:flex;align-items:center;gap:10px}.cpn .av{width:40px;height:40px;flex:none}
 .cgo{padding:9px 16px;border:0;border-radius:999px;background:var(--grad,linear-gradient(135deg,#7C3AED,#A855F7 55%,#E879F9));color:#fff;font:600 13.5px Manrope,sans-serif;cursor:pointer;box-shadow:0 8px 22px -8px rgba(168,85,247,.7)}.cgo:disabled{opacity:.45;cursor:default;box-shadow:none}
 .club .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.club .acts>button{flex:1}
 @media (max-width:640px){.ctrc{grid-template-columns:1fr}}
@@ -857,19 +861,20 @@ body>.gmod{max-width:none!important;width:auto!important;grid-column:auto!import
 <button class="nadd" data-t="add" aria-label="Добавить новое"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 </nav>
 <script>addEventListener('DOMContentLoaded',function(){const M=window.DL_ME;if(!M)return;const e=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-let h=0;for(const c of M.name)h=(h*31+c.charCodeAt(0))%360;const ini=e([...M.name][0]||'?');
+let h=0;for(const c of M.name)h=(h*31+c.charCodeAt(0))%360;const ini=M.av&&/^data:image\//.test(M.av)?`<img src="${e(M.av)}" alt="">`:e([...M.name][0]||'?');
 const el=document.createElement('div');el.className='acct';el.style.setProperty('--ah',h);document.body.appendChild(el);document.documentElement.classList.add('has-acct');
 const KEY='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3m-3 3 2 2m-5 1 2 2"/></svg>',
 OUT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>',
 GIFT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>',
 MAIL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+PIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
 CR='<svg viewBox="0 0 24 24" fill="#1c1205"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z"/></svg>';
 el.innerHTML=`<button class="abtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Аккаунт ${e(M.name)}"><span class="av">${ini}</span>${M.admin?`<span class="crown">${CR}</span>`:''}</button>
 <div class="amenu" role="menu" hidden><div class="ahead"><span class="av">${ini}</span><div><b>${e(M.name)}</b><small class="${M.admin?'adm':''}">${M.admin?'администратор':'игрок'}</small><small class="aeml">${M.email?e(M.email):'почта не привязана'}</small></div></div><div class="asep"></div>
-${M.admin?`<button class="aitem" type="button" data-a="gift">${GIFT}Выдать / достроить</button>`:''}<button class="aitem" type="button" data-a="em">${MAIL}${M.email?'Сменить почту':'Привязать почту'}</button><div class="apw aem" hidden></div><button class="aitem" type="button" data-a="pw">${KEY}Сменить пароль</button><div class="apw apw0" hidden></div>
+${M.admin?`<button class="aitem" type="button" data-a="gift">${GIFT}Выдать / достроить</button>`:''}<button class="aitem" type="button" data-a="av">${PIC}Аватарка</button><div class="apw aav" hidden></div><button class="aitem" type="button" data-a="em">${MAIL}${M.email?'Сменить почту':'Привязать почту'}</button><div class="apw aem" hidden></div><button class="aitem" type="button" data-a="pw">${KEY}Сменить пароль</button><div class="apw apw0" hidden></div>
 <button class="aitem out" type="button" data-a="out">${OUT}Выйти</button></div>`;
-const btn=el.querySelector('.abtn'),menu=el.querySelector('.amenu'),pw=el.querySelector('.apw0'),emp=el.querySelector('.aem');
-const open=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',v);if(!v){pw.hidden=true;pw.innerHTML='';emp.hidden=true;emp.innerHTML=''}};
+const btn=el.querySelector('.abtn'),menu=el.querySelector('.amenu'),pw=el.querySelector('.apw0'),emp=el.querySelector('.aem'),avp=el.querySelector('.aav');
+const open=v=>{menu.hidden=!v;btn.setAttribute('aria-expanded',v);if(!v){pw.hidden=true;pw.innerHTML='';emp.hidden=true;emp.innerHTML='';avp.hidden=true;avp.innerHTML=''}};
 const emForm=(hint)=>{emp.hidden=false;emp.innerHTML=`${hint?`<p class="am">${hint}</p>`:''}<input type="email" name="e" placeholder="Почта" autocomplete="email" value="${e(M.email||'')}"><button class="go s2" type="button" data-s>Отправить код</button><input name="c" inputmode="numeric" maxlength="6" placeholder="Код из письма" autocomplete="one-time-code"><button class="go" type="button" data-ok>Подтвердить</button><p class="am"></p>`;
 const m=emp.querySelector('p.am:last-child'),EM=()=>emp.querySelector('[name=e]').value.trim(),J={'Content-Type':'application/json'};emp.querySelector('[name=e]').focus();
 emp.querySelector('[data-s]').onclick=async ev=>{const b=ev.currentTarget;m.className='am';m.textContent='Отправляю…';b.disabled=true;const r=await DLF('/api/auth/code',{method:'POST',headers:J,body:JSON.stringify({email:EM(),p:'link'})}).catch(()=>null);const j=r?await r.json().catch(()=>({})):{};
@@ -878,17 +883,26 @@ emp.querySelector('[data-ok]').onclick=async()=>{m.className='am';m.textContent=
 if(r&&r.ok){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(_){}m.className='am ok';m.textContent='Готово! Теперь входи по почте.';setTimeout(()=>location.reload(),1200)}else{m.className='am bad';m.textContent=j.error||'Сервер не отвечает'}}};
 btn.onclick=ev=>{ev.stopPropagation();open(menu.hidden)};
 document.addEventListener('click',ev=>{if(!el.contains(ev.target))open(false)});document.addEventListener('keydown',ev=>{if(ev.key==='Escape')open(false)});
+el.querySelector('[data-a=av]').onclick=()=>{if(!avp.hidden){avp.hidden=true;avp.innerHTML='';return}avp.hidden=false;
+avp.innerHTML=`<input type="file" accept="image/*" hidden><button class="go" type="button" data-up>Загрузить фото</button>${M.av?'<button class="go s2" type="button" data-rm>Убрать аватарку</button>':''}<p class="am">Квадратная картинка смотрится лучше всего.</p>`;
+const m=avp.querySelector('.am'),fi=avp.querySelector('input'),J={'Content-Type':'application/json'};
+const save=async d=>{m.className='am';m.textContent='Сохраняю…';const r=await DLF('/api/avatar',{method:'POST',headers:J,body:JSON.stringify({data:d})}).catch(()=>null);const j=r?await r.json().catch(()=>({})):{};
+if(r&&r.ok){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(_){}m.className='am ok';m.textContent='Готово';setTimeout(()=>location.reload(),600)}else{m.className='am bad';m.textContent=j.error||'Сервер не отвечает'}};
+avp.querySelector('[data-up]').onclick=()=>fi.click();const rmb=avp.querySelector('[data-rm]');if(rmb)rmb.onclick=()=>save('');
+fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const z=Math.min(im.width,im.height),c=document.createElement('canvas');c.width=c.height=160;c.getContext('2d').drawImage(im,(im.width-z)/2,(im.height-z)/2,z,z,0,0,160,160);save(c.toDataURL('image/jpeg',.85))};im.onerror=()=>{m.className='am bad';m.textContent='Не получилось открыть картинку'};im.src=rd.result};rd.readAsDataURL(f)}};
 el.querySelector('[data-a=em]').onclick=()=>{if(!emp.hidden){emp.hidden=true;emp.innerHTML='';return}emForm('')};
 if(!M.email){try{if(!sessionStorage.getItem('dl_emq')){setTimeout(()=>{try{sessionStorage.setItem('dl_emq','1')}catch(_){}open(true);emForm('Привяжи почту: теперь вход идёт по ней, и через неё можно восстановить пароль. Ник и прогресс останутся.')},1800)}}catch(_){}}
 const gb=el.querySelector('[data-a=gift]');if(gb)gb.onclick=()=>{open(false);giftModal()};
 el.querySelector('[data-a=out]').onclick=async()=>{await DLF('/api/logout',{method:'POST'}).catch(()=>{});DL_LOGOUT()};
-el.querySelector('[data-a=pw]').onclick=()=>{if(!pw.hidden){pw.hidden=true;pw.innerHTML='';return}pw.hidden=false;
-pw.innerHTML=`<input type="password" name="o" placeholder="Старый пароль" autocomplete="current-password"><input type="password" name="n" placeholder="Новый, от 6 символов" autocomplete="new-password"><button class="go" type="button">Сохранить</button><p class="am"></p>`;
-pw.querySelector('input').focus();const m=pw.querySelector('.am');
-pw.querySelector('.go').onclick=async()=>{const o=pw.querySelector('[name=o]').value,n=pw.querySelector('[name=n]').value;m.className='am';
-if(n.length<6){m.className='am bad';m.textContent='Новый пароль от 6 символов';return}m.textContent='Сохраняю…';
-const r=await DLF('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old:o,new:n})});const j=await r.json().catch(()=>({}));
-if(r.ok){m.className='am ok';m.textContent='Пароль изменён';setTimeout(()=>{pw.hidden=true;pw.innerHTML=''},1400)}else{m.className='am bad';m.textContent=j.error||'Ошибка'}}}});</script>
+el.querySelector('[data-a=pw]').onclick=()=>{if(!pw.hidden){pw.hidden=true;pw.innerHTML='';return}pw.hidden=false;const J={'Content-Type':'application/json'};
+if(!M.email){pw.innerHTML='<p class="am bad">Пароль меняется через почту. Сначала привяжи почту в пункте выше.</p>';return}
+pw.innerHTML=`<p class="am">Пришлём код на ${e(M.email)}, с ним задашь новый пароль.</p><button class="go" type="button" data-send>Отправить код</button><input name="c" inputmode="numeric" maxlength="6" placeholder="Код из письма" autocomplete="one-time-code" hidden><input type="password" name="n" placeholder="Новый пароль, от 6 символов" autocomplete="new-password" hidden><button class="go" type="button" data-set hidden>Сменить пароль</button><p class="am"></p>`;
+const m=pw.querySelector('p.am:last-child'),sb=pw.querySelector('[data-send]'),cI=pw.querySelector('[name=c]'),nI=pw.querySelector('[name=n]'),setb=pw.querySelector('[data-set]');
+sb.onclick=async()=>{m.className='am';m.textContent='Отправляю код…';sb.disabled=true;const r=await fetch(DL_API+'/api/auth/code',{method:'POST',headers:J,body:JSON.stringify({email:M.email,p:'reset'})}).catch(()=>null);const j=r?await r.json().catch(()=>({})):{};
+if(!r||!r.ok){m.className='am bad';m.textContent=j.error||'Сервер не отвечает';sb.disabled=false;return}m.className='am ok';m.textContent='Код отправлен, проверь почту и «Спам».';cI.hidden=nI.hidden=setb.hidden=false;sb.classList.add('s2');sb.textContent='Отправить ещё раз';setTimeout(()=>sb.disabled=false,60000);cI.focus()};
+setb.onclick=async()=>{const n=nI.value;if(n.length<6){m.className='am bad';m.textContent='Пароль от 6 символов';return}m.className='am';m.textContent='Сохраняю…';
+const r=await fetch(DL_API+'/api/auth/reset',{method:'POST',headers:J,body:JSON.stringify({email:M.email,code:cI.value,password:n})}).catch(()=>null);const j=r?await r.json().catch(()=>({})):{};
+if(r&&r.ok){m.className='am ok';m.textContent='Пароль изменён';setTimeout(()=>{pw.hidden=true;pw.innerHTML=''},1400)}else{m.className='am bad';m.textContent=j.error||'Ошибка'}}}});</script>
 <script>(function(){const b=document.body,a=document.createElement('aside');a.className='side';const br=b.querySelector('header.brand'),w=document.getElementById('wallet'),n=b.querySelector('nav');b.insertBefore(a,br);[br,w,n].forEach(x=>x&&a.appendChild(x))})();</script>
 <div class="subnav" id="subnav" role="tablist" aria-label="Подразделы"></div>
 
@@ -922,7 +936,7 @@ var out=function(){try{localStorage.removeItem('dl_token');localStorage.removeIt
 if(!t||!m||!m.id){out();return}
 window.DL_ME=m;window.DL_LOGOUT=out;
 window.DLF=function(p,o){o=o||{};o.headers=Object.assign({},o.headers||{},{Authorization:'Bearer '+t});return fetch(DL_API+p,o).then(function(r){if(r.status===401){out();throw new Error('login')}return r})};
-DLF('/api/me',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(!j.user){out();return}if(j.user.admin!==m.admin||j.user.name!==m.name||j.user.id!==m.id){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(e){}location.reload()}}).catch(function(){});
+DLF('/api/me',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){if(!j.user){out();return}if(j.user.admin!==m.admin||j.user.name!==m.name||j.user.id!==m.id){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(e){}location.reload()}else if((j.user.av||'')!==(m.av||'')||(j.user.email||'')!==(m.email||'')){try{localStorage.setItem('dl_me',JSON.stringify(j.user))}catch(e){}}}).catch(function(){});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').then(function(){if(!navigator.serviceWorker.controller){navigator.serviceWorker.ready.then(function(){var k='dl_swr';try{if(!sessionStorage.getItem(k)){sessionStorage.setItem(k,'1');location.reload()}}catch(e){}})}}).catch(function(){})}
 })();</script>
 <script>
@@ -2109,6 +2123,6 @@ const bn=[...new Set(built)].map(id=>(bdef(id)||{n:id}).n).join(', ');toast(`${f
 setTimeout(checkGifts,2500);setInterval(checkGifts,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkGifts()})})();
 </script>
 <script src="azeroy/az.js?v=2"></script>
-<script src="club/club.js?v=1"></script>
+<script src="club/club.js?v=2"></script>
 </body>
 </html>
