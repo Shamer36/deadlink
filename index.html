@@ -731,6 +731,7 @@ body>.gmod{max-width:none!important;width:auto!important;grid-column:auto!import
 .ed.in.hl{opacity:1;stroke-width:2.4}
 .ed.in.dim{opacity:.05}
 
+.gcl{touch-action:manipulation}
 /* ---- Azeroy ---- */
 .azwin{border:2px solid #0a0a7a;border-radius:10px;overflow:hidden;background:linear-gradient(180deg,#1414ff 0%,#5a5aff 45%,#e9e9ff 100%);box-shadow:0 18px 50px rgba(5,0,40,.6);color:#0b0b3a}
 .azbar{display:flex;align-items:center;gap:10px;padding:7px 10px;background:linear-gradient(180deg,#2c5cff,#0a2bd6);color:#fff;font:700 13px Tahoma,Verdana,sans-serif;border-bottom:2px solid #06107a}
@@ -1491,11 +1492,11 @@ return`<div class="gcard" style="--gc:${gs[0]?gs[0].c:"#C084FC"}"><p class="gk">
 if(GSEL){const g=GEN.find(z=>z.id===GSEL),m=gArt(g),f=m.filter(has).length;
 return`<div class="gcard" style="--gc:${g.c}"><p class="gk">${esc(g.ru)}</p><h2>${esc(g.n)}</h2><p>${esc(g.d)}</p><div class="gprog"><i style="width:${m.length?Math.round(f/m.length*100):0}%"></i></div><p class="hint2">Найдено ${f} из ${m.length}</p><p class="gk" style="margin-top:14px">История</p><ol class="ghist">${g.h.map(([y,t])=>`<li><b>${esc(y)}</b><span>${esc(t)}</span></li>`).join("")}</ol><p class="gk">Представители</p><div class="garts">${m.map(i=>chipA(i,(g.al||{})[un(A[i].a)]||"")).join("")}</div>${(()=>{const rel=GREL.filter(e=>e.includes(g.id)).map(e=>GEN.find(z=>z.id===(e[0]===g.id?e[1]:e[0])));return rel.length?`<p class="gk" style="margin-top:14px">Соседние облака</p><div class="gtags">${rel.map(z=>`<button class="gtag" data-g="${z.id}" style="--gc:${z.c}">${esc(z.n)}</button>`).join("")}</div>`:""})()}</div>`}
 return`<div class="gcard"><p class="sub" style="margin:0">Каждое облако это жанр. Чем больше облако, тем больше в нём исполнителей, а чем ярче, тем больше из них ты уже нашёл. Нажми на облако, чтобы узнать историю, или выбери исполнителя сверху, и небо покажет, куда копать дальше.</p></div>`}
-let AZT=[];
+let AZT=[],AZS=0;
 function drawSky(){const box=$("#skybox");if(!box)return;const opts=A.map((a,i)=>[un(a.a),i]).filter(([n,i])=>gOf(i).length).sort((a,b)=>a[0].localeCompare(b[0]));
 box.innerHTML=`<label class="glike"><span>Если тебе нравится</span><select id="glk"><option value="">выбери исполнителя</option>${opts.map(([n,i])=>`<option value="${i}"${i===GLIKE?" selected":""}>${esc(n)}</option>`).join("")}</select>${GLIKE!=null?'<button id="glx" aria-label="Сбросить">×</button>':""}</label>${skySvg()}<div id="skyinfo">${skyInfo()}</div>`;
 $("#glk").onchange=e=>{GLIKE=e.target.value===""?null:+e.target.value;GSEL=null;drawSky()};const gx=$("#glx");if(gx)gx.onclick=()=>{GLIKE=null;drawSky()};
-box.querySelectorAll(".gcl").forEach(c=>{const go=()=>{if(c.dataset.g==="yab"){const n=Date.now();AZT=AZT.filter(x=>n-x<1500);AZT.push(n);if(AZT.length>=3){AZT=[];goTab("az");return}}else AZT=[];GSEL=GSEL===c.dataset.g?null:c.dataset.g;GLIKE=null;drawSky();const inf=$("#skyinfo");if(GSEL&&inf&&inf.scrollIntoView)inf.scrollIntoView({behavior:"smooth",block:"nearest"})};c.onclick=go;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
+box.querySelectorAll(".gcl").forEach(c=>{const go=()=>{if(c.dataset.g==="yab"){const n=Date.now();AZT=AZT.filter(x=>n-x<1500);AZT.push(n);if(AZT.length>=3){AZT=[];clearTimeout(AZS);goTab("az");return}}else AZT=[];const y=c.dataset.g==="yab";GSEL=y&&AZT.length>1?"yab":GSEL===c.dataset.g?null:c.dataset.g;GLIKE=null;drawSky();clearTimeout(AZS);AZS=setTimeout(()=>{const inf=$("#skyinfo");if(GSEL&&inf&&inf.scrollIntoView)inf.scrollIntoView({behavior:"smooth",block:"nearest"})},y?1600:0)};c.onclick=go;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
 box.querySelectorAll(".gtag").forEach(b=>b.onclick=()=>{GSEL=b.dataset.g;GLIKE=null;drawSky()});
 box.querySelectorAll(".gart").forEach(b=>b.onclick=()=>{nsel=+b.dataset.i;goTab("net")})}
 /* drop art v2: isometric crates */
